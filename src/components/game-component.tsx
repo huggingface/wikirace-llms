@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Flag, Clock, Hash, BarChart, ArrowRight, Bot } from "lucide-react";
@@ -111,6 +111,10 @@ export default function GameComponent({
     ],
   });
   const [isModelThinking, setIsModelThinking] = useState<boolean>(false);
+
+  const runs = useMemo(() => {
+    return reasoningTrace ? [reasoningTrace] : [];
+  }, [reasoningTrace]);
 
   const fetchCurrentPageLinks = useCallback(async () => {
     setLinksLoading(true);
@@ -411,7 +415,7 @@ export default function GameComponent({
             <BarChart className="h-4 w-4" /> Path Visualization
           </div>
 
-          <ForceDirectedGraph runs={reasoningTrace ? [reasoningTrace] : []} runId={null} />
+          <ForceDirectedGraph runs={runs} runId={null} />
         </div>
       </Card>
     </div>
