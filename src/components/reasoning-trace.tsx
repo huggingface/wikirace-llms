@@ -22,6 +22,8 @@ export interface Step {
 
 export interface Run {
   steps: Step[];
+  start_article: string;
+  destination_article: string;
 }
 
 interface ReasoningTraceProps {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Flag, Clock, Hash, BarChart, ArrowRight, Bot } from "lucide-react";
 import inference from "@/lib/inference";
 import ReasoningTrace, { Run, Step } from "./reasoning-trace";
+import ForceDirectedGraph from "./force-directed-graph";
 
 const mockRun: Run = {
   steps: [
@@ -97,6 +98,8 @@ export default function GameComponent({
     "playing"
   );
   const [reasoningTrace, setReasoningTrace] = useState<Run | null>({
+    start_article: startPage,
+    destination_article: targetPage,
     steps: [
       {
         type: "start",
@@ -144,8 +147,8 @@ export default function GameComponent({
 
   const addStepToReasoningTrace = (step: Step) => {
     setReasoningTrace((prev) => {
-      if (!prev) return { steps: [step] };
-      return { steps: [...prev.steps, step] };
+      if (!prev) return { steps: [step], start_article: startPage, destination_article: targetPage };
+      return { steps: [...prev.steps, step], start_article: startPage, destination_article: targetPage };
     });
   };
 
@@ -408,60 +411,10 @@ export default function GameComponent({
             <BarChart className="h-4 w-4" /> Path Visualization
           </div>
 
-          <div className="h-full">
-            {/* Simple visualization of visited nodes */}
-            <div className="h-full flex items-center justify-center">
-              <svg width="100%" height="100%" viewBox="0 0 300 200">
-                {visitedNodes.map((node, index) => {
-                  if (index === 0) return null;
-
-                  const prevX = 50 + ((index - 1) % 3) * 100;
-                  const prevY = 50 + Math.floor((index - 1) / 3) * 50;
-                  const currX = 50 + (index % 3) * 100;
-                  const currY = 50 + Math.floor(index / 3) * 50;
-
-                  return (
-                    <g key={index}>
-                      <line
-                        x1={prevX}
-                        y1={prevY}
-                        x2={currX}
-                        y2={currY}
-                        stroke="#888"
-                        strokeWidth="2"
-                      />
-                      <circle
-                        cx={currX}
-                        cy={currY}
-                        r="10"
-                        fill={node === targetPage ? "#22c55e" : "#3b82f6"}
-                      />
-                      <text
-                        x={currX}
-                        y={currY + 25}
-                        textAnchor="middle"
-                        fontSize="10"
-                      >
-                        {node}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* Starting node */}
-                {visitedNodes.length > 0 && (
-                  <>
-                    <circle cx={50} cy={50} r="10" fill="#3b82f6" />
-                    <text x={50} y={75} textAnchor="middle" fontSize="10">
-                      {visitedNodes[0]}
-                    </text>
-                  </>
-                )}
-              </svg>
-            </div>
-          </div>
+          <ForceDirectedGraph runs={reasoningTrace ? [reasoningTrace] : []} runId={null} />
         </div>
       </Card>
     </div>
   );
 }
+

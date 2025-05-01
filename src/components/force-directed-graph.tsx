@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-// import ForceGraph2D from "react-force-graph-2d";
+import ForceGraph2D from "react-force-graph-2d";
+import { Run } from "./reasoning-trace";
 
 // This is a placeholder component for the force-directed graph
 // In a real implementation, you would use a library like D3.js or react-force-graph
 
 interface ForceDirectedGraphProps {
   runId: number | null;
+  runs: Run[];
 }
 
 export default function ForceDirectedGraph({runs, runId }: ForceDirectedGraphProps) {
@@ -65,35 +67,35 @@ export default function ForceDirectedGraph({runs, runId }: ForceDirectedGraphPro
         }
     }, [runs]);
 
-    useEffect(() => {
-        if (!containerRef.current) return;
-        const observer = new window.ResizeObserver(entries => {
-            for (const entry of entries) {
-                const { width, height } = entry.contentRect;
-                setDimensions({ width, height });
-            }
-        });
-        observer.observe(containerRef.current);
-        // Set initial size
-        setDimensions({
-            width: containerRef.current.offsetWidth,
-            height: containerRef.current.offsetHeight
-        });
-        return () => observer.disconnect();
-    }, []);
+    // useEffect(() => {
+    //     if (!containerRef.current) return;
+    //     const observer = new window.ResizeObserver(entries => {
+    //         for (const entry of entries) {
+    //             const { width, height } = entry.contentRect;
+    //             setDimensions({ width, height });
+    //         }
+    //     });
+    //     observer.observe(containerRef.current);
+    //     // Set initial size
+    //     setDimensions({
+    //         width: containerRef.current.offsetWidth,
+    //         height: containerRef.current.offsetHeight
+    //     });
+    //     return () => observer.disconnect();
+    // }, []);
 
-    if (!runId) {
-        return (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                Select a run to view the path graph
-            </div>
-        );
-    }
+    // if (!runId) {
+    //     return (
+    //         <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+    //             Select a run to view the path graph
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="w-full h-full flex items-center justify-center">
             <div ref={containerRef} className="w-full h-full">
-                {/* <ForceGraph2D
+                <ForceGraph2D
                     graphData={graphData}
                     nodeLabel="id"
                     linkLabel="id"
@@ -101,7 +103,7 @@ export default function ForceDirectedGraph({runs, runId }: ForceDirectedGraphPro
                     linkColor="gray"
                     width={dimensions.width}
                     height={dimensions.height}
-                /> */}
+                />
             </div>
         </div>
     );
