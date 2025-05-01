@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Flag, Clock, Hash, BarChart, ArrowRight, Bot } from "lucide-react";
+
+const API_BASE = "http://localhost:8000"
 
 interface GameComponentProps {
   player: "me" | "model";
@@ -14,23 +16,6 @@ interface GameComponentProps {
   onReset: () => void;
 }
 
-// Mock data for available links
-const mockLinks = [
-  "Canine",
-  "Pet",
-  "Wolf",
-  "Puppy",
-  "Breed",
-  "Animal",
-  "Domestication",
-  "Companion",
-  "Mammal",
-  "Hunting",
-  "Guard dog",
-  "Service animal",
-  "Therapy",
-];
-
 export default function GameComponent({
   player,
   model,
@@ -40,15 +25,30 @@ export default function GameComponent({
   onReset,
 }: GameComponentProps) {
   const [currentPage, setCurrentPage] = useState<string>(startPage);
+  const [currentPageLinks, setCurrentPageLinks] = useState<string[]>([]);
+  const [linksLoading, setLinksLoading] = useState<boolean>(false);
   const [hops, setHops] = useState<number>(0);
   const [timeElapsed, setTimeElapsed] = useState<number>(0);
   const [visitedNodes, setVisitedNodes] = useState<string[]>([startPage]);
   const [gameStatus, setGameStatus] = useState<"playing" | "won" | "lost">(
     "playing"
   );
+
   const [isModelThinking, setIsModelThinking] = useState<boolean>(false);
 
-  // Timer effect
+  const fetchCurrentPageLinks = useCallback(async () => {
+    setLinksLoading(true);
+    const response = await fetch(`${API_BASE}/get_article_with_links/${currentPage}`);
+    const data = await response.json();
+    setCurrentPageLinks(data.links);
+    setLinksLoading(false);
+  }, [currentPage]);
+
+  useEffect(() => { 
+    fetchCurrentPageLinks();
+  }, [fetchCurrentPageLinks]);
+  
+
   useEffect(() => {
     if (gameStatus === "playing") {
       const timer = setInterval(() => {
@@ -68,34 +68,53 @@ export default function GameComponent({
     }
   }, [currentPage, targetPage, hops, maxHops]);
 
-  // Model player effect
-  useEffect(() => {
-    if (player === "model" && gameStatus === "playing" && !isModelThinking) {
-      const makeModelMove = async () => {
+    const handleLinkClick = (link: string) => {
+        if (gameStatus !== "playing") return;
+
+        setCurrentPage(link);
+        setHops((prev) => prev + 1);
+        setVisitedNodes((prev) => [...prev, link]);
+    }
+
+    const makeModelMove = async () => {
         setIsModelThinking(true);
 
         // Simulate model thinking time
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Randomly select a link
-        const randomLink =
-          mockLinks[Math.floor(Math.random() * mockLinks.length)];
+        const randomLink = currentPageLinks[Math.floor(Math.random() * currentPageLinks.length)];
+
+        console.log("Model picked randomLink", randomLink, "from ", currentPageLinks);
 
         handleLinkClick(randomLink);
         setIsModelThinking(false);
-      };
-
-      makeModelMove();
     }
-  }, [player, currentPage, gameStatus, isModelThinking]);
 
-  const handleLinkClick = (link: string) => {
-    if (gameStatus !== "playing") return;
 
-    setCurrentPage(link);
-    setHops((prev) => prev + 1);
-    setVisitedNodes((prev) => [...prev, link]);
-  };
+  // Model player effect
+//   useEffect(() => {
+//     if (player === "model" && gameStatus === "playing" && !isModelThinking && !linksLoading) {
+//       const makeModelMove = async () => {
+//         setIsModelThinking(true);
+
+//         // Simulate model thinking time
+//         await new Promise((resolve) => setTimeout(resolve, 1500));
+
+//         // Randomly select a link
+//         const randomLink =
+//           currentPageLinks[Math.floor(Math.random() * currentPageLinks.length)];
+
+
+//         console.log("Model picked randomLink", randomLink, "from ", currentPageLinks);
+
+//         handleLinkClick(randomLink);
+//         setIsModelThinking(false);
+//       };
+
+//       makeModelMove();
+//     }
+//   }, [player, currentPage, gameStatus, isModelThinking, linksLoading, currentPageLinks, handleLinkClick]);
+
 
   const handleGiveUp = () => {
     setGameStatus("lost");
@@ -109,14 +128,14 @@ export default function GameComponent({
 
   // Get model name from ID
   const getModelName = () => {
-    const models = {
+    const models: Record<string, string> = {
       "gpt-4o": "GPT-4o",
       "claude-3-5-sonnet": "Claude 3.5 Sonnet",
       "gemini-1.5-pro": "Gemini 1.5 Pro",
       "llama-3-70b": "Llama 3 70B",
       "mistral-large": "Mistral Large",
     };
-    return model ? (models as any)[model] || model : "";
+    return model ? models[model] || model : "";
   };
 
   return (
@@ -124,7 +143,6 @@ export default function GameComponent({
       {/* Left pane - Current page and available links */}
       <Card className="p-4 flex flex-col h-[600px]">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Current: {currentPage}</h3>
           {gameStatus !== "playing" && (
             <Button onClick={onReset} variant="outline">
               New Game
@@ -154,7 +172,7 @@ export default function GameComponent({
           <>
             <h4 className="text-sm font-medium mb-2">Available Links:</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-              {mockLinks.map((link) => (
+              {currentPageLinks.map((link) => (
                 <Button
                   key={link}
                   variant="outline"
@@ -167,6 +185,15 @@ export default function GameComponent({
                 </Button>
               ))}
             </div>
+
+            {player === "model" && (
+                <Button
+                    onClick={makeModelMove}
+                    disabled={isModelThinking || linksLoading}
+                >
+                    Make Move
+                </Button>
+            )}
           </>
         )}
 

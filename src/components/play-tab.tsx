@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Sun } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 import GameComponent from "@/components/game-component";
 import {
   Select,
@@ -17,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const API_BASE = "http://localhost:8000/"
 
 // Available AI models
 const aiModels = [
@@ -35,6 +38,26 @@ export default function PlayTab() {
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
   const [startPage, setStartPage] = useState<string>("Dogs");
   const [targetPage, setTargetPage] = useState<string>("Canada");
+
+   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
+
+   // Server connection check
+   useEffect(() => {
+     const checkServerConnection = async () => {
+       try {
+         const response = await fetch(API_BASE);
+         setIsServerConnected(response.ok);
+       } catch {
+         setIsServerConnected(false);
+       }
+     };
+
+     // Check immediately and then every 30 seconds
+     checkServerConnection();
+     const interval = setInterval(checkServerConnection, 30000);
+
+     return () => clearInterval(interval);
+   }, []);
 
   const handleStartGame = () => {
     setIsGameStarted(true);
@@ -69,6 +92,23 @@ export default function PlayTab() {
                     <TabsTrigger value="model">Model</TabsTrigger>
                   </TabsList>
                 </Tabs>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-sm">
+                  {isServerConnected ? (
+                    <Wifi className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <WifiOff className="h-4 w-4 text-red-500" />
+                  )}
+                  <span
+                    className={
+                      isServerConnected ? "text-green-500" : "text-red-500"
+                    }
+                  >
+                    {isServerConnected ? "Connected" : "Disconnected"}
+                  </span>
+                </div>
               </div>
 
               {player === "model" && (
