@@ -1,12 +1,9 @@
 import { InferenceClient } from "@huggingface/inference";
-import { useEffect } from "react";
-import { useState } from "react";
-
 
 export default async function inference({
   prompt,
   model = "Qwen/Qwen3-235B-A22B",
-  apiKey = "xxx",
+  apiKey,
   maxTokens = 512
 }: {
   prompt: string,
@@ -14,6 +11,13 @@ export default async function inference({
   apiKey?: string,
   maxTokens?: number
 }) {
+  if (!apiKey) {
+    const token = window.localStorage.getItem("huggingface_access_token");
+    if (!token) {
+      throw new Error("You must be signed in to use the inference API!");
+    }
+    apiKey = token;
+  }
 
   console.log("Inference", prompt, model, apiKey);
   const client = new InferenceClient(apiKey);

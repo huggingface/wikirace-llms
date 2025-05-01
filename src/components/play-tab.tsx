@@ -18,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SignInWithHuggingFaceButton } from "@/components/sign-in-with-hf-button";
 
-const API_BASE = "http://localhost:8000/"
+const API_BASE = "http://localhost:8000/";
 
 // Available AI models
 const aiModels = [
@@ -39,25 +40,25 @@ export default function PlayTab() {
   const [startPage, setStartPage] = useState<string>("Dogs");
   const [targetPage, setTargetPage] = useState<string>("Canada");
 
-   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
+  const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
 
-   // Server connection check
-   useEffect(() => {
-     const checkServerConnection = async () => {
-       try {
-         const response = await fetch(API_BASE);
-         setIsServerConnected(response.ok);
-       } catch {
-         setIsServerConnected(false);
-       }
-     };
+  // Server connection check
+  useEffect(() => {
+    const checkServerConnection = async () => {
+      try {
+        const response = await fetch(API_BASE);
+        setIsServerConnected(response.ok);
+      } catch {
+        setIsServerConnected(false);
+      }
+    };
 
-     // Check immediately and then every 30 seconds
-     checkServerConnection();
-     const interval = setInterval(checkServerConnection, 30000);
+    // Check immediately and then every 30 seconds
+    checkServerConnection();
+    const interval = setInterval(checkServerConnection, 30000);
 
-     return () => clearInterval(interval);
-   }, []);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleStartGame = () => {
     setIsGameStarted(true);
