@@ -4,6 +4,30 @@ import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Flag, Clock, Hash, BarChart, ArrowRight, Bot } from "lucide-react";
+import inference from "@/lib/inference";
+
+const buildPrompt =
+  (current: string, target: string, path_so_far: string[], links: string[]) => {
+    const formatted_links = links.map((link, index) => `${index + 1}. ${link}`).join('\n');
+    const path_so_far_str = path_so_far.join(' -> ');
+    
+    return `You are playing WikiRun, trying to navigate from one Wikipedia article to another using only links.
+
+IMPORTANT: You MUST put your final answer in <answer>NUMBER</answer> tags, where NUMBER is the link number.
+For example, if you want to choose link 3, output <answer>3</answer>.
+
+Current article: ${current}
+Target article: ${target}
+You have ${links.length} link(s) to choose from:
+${formatted_links}
+
+Your path so far: ${path_so_far_str}
+
+Think about which link is most likely to lead you toward the target article.
+First, analyze each link briefly and how it connects to your goal, then select the most promising one.
+
+Remember to format your final answer by explicitly writing out the xml number tags like this: <answer>NUMBER</answer>`;
+  }
 
 const API_BASE = "http://localhost:8000"
 
@@ -33,6 +57,8 @@ export default function GameComponent({
   const [gameStatus, setGameStatus] = useState<"playing" | "won" | "lost">(
     "playing"
   );
+  const [maxTokens, setMaxTokens] = useState<number>(1024);
+  const [maxLinks, setMaxLinks] = useState<number>(200); // limit the number of links to 200
 
   const [isModelThinking, setIsModelThinking] = useState<boolean>(false);
 
@@ -40,9 +66,9 @@ export default function GameComponent({
     setLinksLoading(true);
     const response = await fetch(`${API_BASE}/get_article_with_links/${currentPage}`);
     const data = await response.json();
-    setCurrentPageLinks(data.links);
+    setCurrentPageLinks(data.links.slice(0, maxLinks));
     setLinksLoading(false);
-  }, [currentPage]);
+  }, [currentPage, maxLinks]);
 
   useEffect(() => { 
     fetchCurrentPageLinks();
@@ -82,14 +108,40 @@ export default function GameComponent({
         // Simulate model thinking time
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        const randomLink = currentPageLinks[Math.floor(Math.random() * currentPageLinks.length)];
+        const modelResponse = await inference(
+            {
+                model: "Qwen/Qwen3-30B-A3B",
+                prompt: buildPrompt(currentPage, targetPage, visitedNodes, currentPageLinks),
+                maxTokens: maxTokens
+            }
+        )
+        console.log("Model response", modelResponse.content);
 
-        console.log("Model picked randomLink", randomLink, "from ", currentPageLinks);
+        const answer = modelResponse.content.match(/<answer>(.*?)<\/answer>/)?.[1];
+        if (!answer) {
+            console.error("No answer found in model response");
+            return;
+        }
 
-        handleLinkClick(randomLink);
+        // try parsing the answer as an integer
+        const answerInt = parseInt(answer);
+        if (isNaN(answerInt)) {
+            console.error("Invalid answer found in model response");
+            return;
+        }
+
+        if (answerInt < 1 || answerInt > currentPageLinks.length) {
+            console.error("Selected link out of bounds", answerInt, "from ", currentPageLinks.length, "links");
+            return;
+        }
+
+        const selectedLink = currentPageLinks[answerInt - 1];
+
+        console.log("Model picked selectedLink", selectedLink, "from ", currentPageLinks);
+
+        handleLinkClick(selectedLink);
         setIsModelThinking(false);
     }
-
 
   // Model player effect
 //   useEffect(() => {
