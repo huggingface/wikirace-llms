@@ -32,7 +32,7 @@ const aiModels = [
 
 export default function PlayTab() {
   const [player, setPlayer] = useState<"me" | "model">("me");
-  const [selectedModel, setSelectedModel] = useState<string>("gpt-4o");
+  const [selectedModel, setSelectedModel] = useState<string | undefined>();
   const [maxHops, setMaxHops] = useState<number>(20);
   const [nodeList, setNodeList] = useState<string>("default");
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
@@ -41,9 +41,11 @@ export default function PlayTab() {
   const [maxTokens, setMaxTokens] = useState<number>(1024);
   const [maxLinks, setMaxLinks] = useState<number>(200);
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
+  const [modelList, setModelList] = useState<{id: string, name: string, author: string, likes: number, trendingScore: number}[]>([]);
 
   // Server connection check
   useEffect(() => {
+    fetchAvailableModels();
     const checkServerConnection = async () => {
       try {
         const response = await fetch(API_BASE);
@@ -71,6 +73,23 @@ export default function PlayTab() {
   const handlePlayerChange = (value: string) => {
     setPlayer(value as "me" | "model");
   };
+
+  const fetchAvailableModels = async () => {
+    const response = await fetch(
+      "https://huggingface.co/api/models?inference_provider=all&pipeline_tag=text-generation"
+    );
+    const models = await response.json()
+    const filteredModels = models.filter((m: any) => m.tags.includes('text-generation'))
+    const modelList = filteredModels.map((m: any) => ({
+        id: m.id,
+        likes: m.likes,
+        trendingScore: m.trendingScore,
+        author: m.id.split('/')[0],
+        name: m.id.split('/')[1],
+    }));
+    console.log("got model list", modelList);
+    setModelList(modelList);
+  }
 
   return (
     <div className="space-y-4">
@@ -155,26 +174,13 @@ export default function PlayTab() {
                     onValueChange={setSelectedModel}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a model" />
+                      <SelectValue placeholder={`Select a model (${modelList.length} models available)`} />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(
-                        aiModels.reduce((acc, model) => {
-                          if (!acc[model.category]) {
-                            acc[model.category] = [];
-                          }
-                          acc[model.category].push(model);
-                          return acc;
-                        }, {} as Record<string, typeof aiModels>)
-                      ).map(([category, models]) => (
-                        <SelectGroup key={category}>
-                          <SelectLabel>{category}</SelectLabel>
-                          {models.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
+                      {modelList.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.id}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

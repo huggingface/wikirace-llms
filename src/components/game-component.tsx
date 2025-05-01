@@ -113,7 +113,7 @@ export default function GameComponent({
         const modelResponse = await inference(
             {
                 apiKey: window.localStorage.getItem("huggingface_access_token") || undefined,
-                model: "Qwen/Qwen3-30B-A3B",
+                model: model,
                 prompt: buildPrompt(currentPage, targetPage, visitedNodes, currentPageLinks),
                 maxTokens: maxTokens
             }
@@ -154,18 +154,6 @@ export default function GameComponent({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  };
-
-  // Get model name from ID
-  const getModelName = () => {
-    const models: Record<string, string> = {
-      "gpt-4o": "GPT-4o",
-      "claude-3-5-sonnet": "Claude 3.5 Sonnet",
-      "gemini-1.5-pro": "Gemini 1.5 Pro",
-      "llama-3-70b": "Llama 3 70B",
-      "mistral-large": "Mistral Large",
-    };
-    return model ? models[model] || model : "";
   };
 
   return (
@@ -230,7 +218,7 @@ export default function GameComponent({
         {player === "model" && isModelThinking && gameStatus === "playing" && (
           <div className="flex items-center gap-2 text-sm animate-pulse mb-4">
             <Bot className="h-4 w-4" />
-            <span>{getModelName()} is thinking...</span>
+            <span>{model} is thinking...</span>
           </div>
         )}
 
@@ -247,7 +235,7 @@ export default function GameComponent({
         {gameStatus === "won" && (
           <div className="bg-green-100 text-green-800 p-4 rounded-md mt-auto">
             <h3 className="font-bold">
-              {player === "model" ? `${getModelName()} won!` : "You won!"}
+              {player === "model" ? `${model} won!` : "You won!"}
             </h3>
             <p>
               {player === "model" ? "It" : "You"} reached {targetPage} in {hops}{" "}
@@ -260,7 +248,7 @@ export default function GameComponent({
           <div className="bg-red-100 text-red-800 p-4 rounded-md mt-auto">
             <h3 className="font-bold">Game Over</h3>
             <p>
-              {player === "model" ? `${getModelName()} didn't` : "You didn't"}{" "}
+              {player === "model" ? `${model} didn't` : "You didn't"}{" "}
               reach {targetPage} within {maxHops} hops.
             </p>
           </div>
@@ -306,7 +294,7 @@ export default function GameComponent({
             <div className="flex items-center gap-2">
               <Bot className="h-4 w-4 text-blue-500" />
               <span className="font-medium text-blue-700">
-                {getModelName()}{" "}
+                {model}{" "}
                 {isModelThinking ? "is playing..." : "is playing"}
               </span>
             </div>

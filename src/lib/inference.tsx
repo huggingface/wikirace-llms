@@ -23,7 +23,6 @@ export default async function inference({
   const client = new InferenceClient(apiKey);
 
   const chatCompletion = await client.chatCompletion({
-    provider: "fireworks-ai",
     model: model,
     messages: [
       {
