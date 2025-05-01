@@ -1,67 +1,111 @@
 "use client";
 
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface ReasoningTraceProps {
-  runId: number | null;
+interface Message {
+  role: "user" | "assistant";
+  content: string;
 }
 
-export default function ReasoningTrace({ runId }: ReasoningTraceProps) {
-  const [userInput, setUserInput] = useState("");
+interface StepMetadata {
+  message?: string;
+  conversation?: Message[];
+}
 
-  if (!runId) {
+interface Step {
+  type: string;
+  article: string;
+  links?: unknown[];
+  metadata?: StepMetadata;
+}
+
+interface Run {
+  steps: Step[];
+}
+
+interface ReasoningTraceProps {
+  run: Run | null | undefined;
+}
+
+const MAX_MESSAGE_LENGTH = 200;
+
+function ExpandableMessage({ message }: { message: Message }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isLongMessage = message.content.length > MAX_MESSAGE_LENGTH;
+
+  const toggleExpand = () => setIsExpanded(!isExpanded);
+
+  return (
+    <div
+      className={`p-3 rounded-lg max-w-[80%] ${
+        message.role === "user"
+          ? "bg-primary/10 ml-auto"
+          : "bg-secondary/10 mr-auto"
+      }`}
+    >
+      <p className="text-xs font-semibold mb-1 capitalize text-muted-foreground">
+        {message.role}
+      </p>
+      <p className="text-sm whitespace-pre-wrap">
+        {isLongMessage && !isExpanded
+          ? `${message.content.substring(0, MAX_MESSAGE_LENGTH)}...`
+          : message.content}
+      </p>
+      {isLongMessage && (
+        <Button
+          variant="link"
+          size="sm"
+          className="p-0 h-auto text-xs mt-1"
+          onClick={toggleExpand}
+        >
+          {isExpanded ? "Show Less" : "Show More"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+export default function ReasoningTrace({ run }: ReasoningTraceProps) {
+  if (!run?.steps) {
     return (
       <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-        Select a run to view the reasoning trace
+        {run === undefined ? "Loading..." : "Select a run to view the reasoning trace"}
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
-      <h3 className="text-lg font-medium mb-4">LLM Reasoning Trace</h3>
+      <h3 className="text-lg font-semibold mb-4 px-1">LLM Reasoning Trace</h3>
 
-      <div className="flex-1 overflow-y-auto mb-4 bg-muted/30 rounded-md p-4">
-        <div className="space-y-4">
-          <div className="bg-primary/10 p-3 rounded-lg max-w-[80%]">
-            <p className="text-sm">Hello! How can I help you today?</p>
-          </div>
+      <div className="flex-1 overflow-y-auto space-y-4 p-1">
+        {run.steps.map((step, index) => (
+          <div key={index} className="py-4 px-2">
+            <div>
+              <h4 className="text-base font-semibold">Step {index + 1} - {step.type}</h4>
+              <p className="text-sm text-muted-foreground pt-1">
+                Current: {step.article} {step.links && `(${step.links.length} links)`}
+              </p>
+              {step.metadata?.message && (
+                 <p className="text-sm text-muted-foreground pt-1 italic">"{step.metadata.message}"</p>
+              )}
+            </div>
 
-          <div className="bg-primary/10 p-3 rounded-lg max-w-[80%] ml-auto">
-            <p className="text-sm">How can I deploy a website to Vercel?</p>
-          </div>
+            {step.metadata?.conversation && step.metadata.conversation.length > 0 && (
+               <div className="space-y-2 mt-3 pt-3">
+                {step.metadata.conversation.map((message, msgIndex) => (
+                  <ExpandableMessage key={msgIndex} message={message} />
+                ))}
+               </div>
+            )}
 
-          <div className="bg-primary/10 p-3 rounded-lg max-w-[80%]">
-            <p className="text-sm">
-              To deploy a website to Vercel, follow these steps:
-              <br />
-              <br />
-              1. Sign up for a Vercel account: Go to https://vercel.com/signup
-              and sign up using your GitHub, GitLab, or Bitbucket account, or
-              with your email address.
-              <br />
-              <br />
-              2. Install the Vercel command-line interface (CLI) by running the
-              following command in your terminal or command prompt:
-              <br />
-              <code className="bg-muted p-1 rounded">
-                npm install -g vercel
-              </code>
-              <br />
-              <br />
-              Make sure you have Node.js and npm installed on your system before
-              running this command.
-              <br />
-              <br />
-              3. Authenticate with Vercel: Run the following command:
-              <br />
-              <code className="bg-muted p-1 rounded">vercel login</code>
-            </p>
+            {index < run.steps.length - 1 && (
+              <hr className="my-6" />
+            )}
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

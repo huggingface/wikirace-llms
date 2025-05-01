@@ -11,15 +11,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@huggingface/hub": "^1.1.2",
+    "@radix-ui/react-label": "^2.1.4",
     "@radix-ui/react-select": "^2.2.2",
     "@radix-ui/react-slot": "^1.2.0",
     "@radix-ui/react-tabs": "^1.1.9",
     "@tailwindcss/vite": "^4.1.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "d3": "^7.9.0",
     "lucide-react": "^0.503.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-force-graph-2d": "^1.27.1",
+    "react-force-graph-3d": "^1.26.1",
+    "react-vis-force": "^0.3.1",
     "tailwind-merge": "^3.2.0",
     "tailwindcss": "^4.1.5"
   },
