@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ForceGraph2D from "react-force-graph-2d";
+// import ForceGraph2D from "react-force-graph-2d";
 
 // This is a placeholder component for the force-directed graph
 // In a real implementation, you would use a library like D3.js or react-force-graph
@@ -93,7 +93,7 @@ export default function ForceDirectedGraph({runs, runId }: ForceDirectedGraphPro
     return (
         <div className="w-full h-full flex items-center justify-center">
             <div ref={containerRef} className="w-full h-full">
-                <ForceGraph2D
+                {/* <ForceGraph2D
                     graphData={graphData}
                     nodeLabel="id"
                     linkLabel="id"
@@ -101,7 +101,7 @@ export default function ForceDirectedGraph({runs, runId }: ForceDirectedGraphPro
                     linkColor="gray"
                     width={dimensions.width}
                     height={dimensions.height}
-                />
+                /> */}
             </div>
         </div>
     );

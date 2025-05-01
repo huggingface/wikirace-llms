@@ -38,6 +38,8 @@ interface GameComponentProps {
   startPage: string;
   targetPage: string;
   onReset: () => void;
+  maxTokens: number;
+  maxLinks: number;
 }
 
 export default function GameComponent({
@@ -47,6 +49,8 @@ export default function GameComponent({
   startPage,
   targetPage,
   onReset,
+  maxTokens,
+  maxLinks,
 }: GameComponentProps) {
   const [currentPage, setCurrentPage] = useState<string>(startPage);
   const [currentPageLinks, setCurrentPageLinks] = useState<string[]>([]);
@@ -57,8 +61,6 @@ export default function GameComponent({
   const [gameStatus, setGameStatus] = useState<"playing" | "won" | "lost">(
     "playing"
   );
-  const [maxTokens, setMaxTokens] = useState<number>(1024);
-  const [maxLinks, setMaxLinks] = useState<number>(200); // limit the number of links to 200
 
   const [isModelThinking, setIsModelThinking] = useState<boolean>(false);
 
@@ -110,6 +112,7 @@ export default function GameComponent({
 
         const modelResponse = await inference(
             {
+                apiKey: window.localStorage.getItem("huggingface_access_token") || undefined,
                 model: "Qwen/Qwen3-30B-A3B",
                 prompt: buildPrompt(currentPage, targetPage, visitedNodes, currentPageLinks),
                 maxTokens: maxTokens
@@ -117,7 +120,7 @@ export default function GameComponent({
         )
         console.log("Model response", modelResponse.content);
 
-        const answer = modelResponse.content.match(/<answer>(.*?)<\/answer>/)?.[1];
+        const answer = modelResponse.content?.match(/<answer>(.*?)<\/answer>/)?.[1];
         if (!answer) {
             console.error("No answer found in model response");
             return;
@@ -142,31 +145,6 @@ export default function GameComponent({
         handleLinkClick(selectedLink);
         setIsModelThinking(false);
     }
-
-  // Model player effect
-//   useEffect(() => {
-//     if (player === "model" && gameStatus === "playing" && !isModelThinking && !linksLoading) {
-//       const makeModelMove = async () => {
-//         setIsModelThinking(true);
-
-//         // Simulate model thinking time
-//         await new Promise((resolve) => setTimeout(resolve, 1500));
-
-//         // Randomly select a link
-//         const randomLink =
-//           currentPageLinks[Math.floor(Math.random() * currentPageLinks.length)];
-
-
-//         console.log("Model picked randomLink", randomLink, "from ", currentPageLinks);
-
-//         handleLinkClick(randomLink);
-//         setIsModelThinking(false);
-//       };
-
-//       makeModelMove();
-//     }
-//   }, [player, currentPage, gameStatus, isModelThinking, linksLoading, currentPageLinks, handleLinkClick]);
-
 
   const handleGiveUp = () => {
     setGameStatus("lost");

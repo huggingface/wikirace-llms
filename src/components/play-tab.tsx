@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SignInWithHuggingFaceButton } from "@/components/sign-in-with-hf-button";
 
 const API_BASE = "http://localhost:8000/";
 
@@ -39,7 +38,8 @@ export default function PlayTab() {
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
   const [startPage, setStartPage] = useState<string>("Dogs");
   const [targetPage, setTargetPage] = useState<string>("Canada");
-
+  const [maxTokens, setMaxTokens] = useState<number>(1024);
+  const [maxLinks, setMaxLinks] = useState<number>(200);
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
 
   // Server connection check
@@ -111,42 +111,6 @@ export default function PlayTab() {
                   </span>
                 </div>
               </div>
-
-              {player === "model" && (
-                <div className="animate-in fade-in slide-in-from-top-5 duration-300">
-                  <Label htmlFor="model-select" className="block mb-2">
-                    Select Model
-                  </Label>
-                  <Select
-                    value={selectedModel}
-                    onValueChange={setSelectedModel}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(
-                        aiModels.reduce((acc, model) => {
-                          if (!acc[model.category]) {
-                            acc[model.category] = [];
-                          }
-                          acc[model.category].push(model);
-                          return acc;
-                        }, {} as Record<string, typeof aiModels>)
-                      ).map(([category, models]) => (
-                        <SelectGroup key={category}>
-                          <SelectLabel>{category}</SelectLabel>
-                          {models.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
 
             <div>
@@ -179,6 +143,70 @@ export default function PlayTab() {
                 </TabsList>
               </Tabs>
             </div>
+
+            {player === "model" && (
+              <div className="md:col-span-3 animate-in fade-in slide-in-from-top-5 duration-300 grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                <div>
+                  <Label htmlFor="model-select" className="block mb-2">
+                    Select Model
+                  </Label>
+                  <Select
+                    value={selectedModel}
+                    onValueChange={setSelectedModel}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(
+                        aiModels.reduce((acc, model) => {
+                          if (!acc[model.category]) {
+                            acc[model.category] = [];
+                          }
+                          acc[model.category].push(model);
+                          return acc;
+                        }, {} as Record<string, typeof aiModels>)
+                      ).map(([category, models]) => (
+                        <SelectGroup key={category}>
+                          <SelectLabel>{category}</SelectLabel>
+                          {models.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="max-tokens" className="block mb-2">
+                    Max Tokens
+                  </Label>
+                  <Input
+                    id="max-tokens" 
+                    type="number"
+                    value={maxTokens}
+                    onChange={(e) => setMaxTokens(Number.parseInt(e.target.value))}
+                    min={1}
+                    max={10000}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="max-links" className="block mb-2">
+                    Max Links
+                  </Label>
+                  <Input
+                    id="max-links"
+                    type="number"
+                    value={maxLinks}
+                    onChange={(e) => setMaxLinks(Number.parseInt(e.target.value))}
+                    min={1}
+                    max={1000}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -223,6 +251,8 @@ export default function PlayTab() {
           startPage={startPage}
           targetPage={targetPage}
           onReset={handleResetGame}
+          maxTokens={maxTokens}
+          maxLinks={maxLinks}
         />
       )}
     </div>
