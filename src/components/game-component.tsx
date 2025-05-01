@@ -5,13 +5,48 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Flag, Clock, Hash, BarChart, ArrowRight, Bot } from "lucide-react";
 import inference from "@/lib/inference";
+import ReasoningTrace, { Run, Step } from "./reasoning-trace";
 
-const buildPrompt =
-  (current: string, target: string, path_so_far: string[], links: string[]) => {
-    const formatted_links = links.map((link, index) => `${index + 1}. ${link}`).join('\n');
-    const path_so_far_str = path_so_far.join(' -> ');
-    
-    return `You are playing WikiRun, trying to navigate from one Wikipedia article to another using only links.
+const mockRun: Run = {
+  steps: [
+    {
+      type: "start",
+      article: "Dogs",
+      metadata: {
+        message: "Starting Node",
+      },
+    },
+    {
+      type: "step",
+      article: "Dogs",
+      links: ["Dogs", "Cats", "Birds"],
+      metadata: {
+        conversation: [
+          {
+            role: "user",
+            content: "I want to go to the moon",
+          },
+          {
+            role: "assistant",
+            content: "I want to go to the moon",
+          },
+        ],
+      },
+    },
+  ],
+};
+const buildPrompt = (
+  current: string,
+  target: string,
+  path_so_far: string[],
+  links: string[]
+) => {
+  const formatted_links = links
+    .map((link, index) => `${index + 1}. ${link}`)
+    .join("\n");
+  const path_so_far_str = path_so_far.join(" -> ");
+
+  return `You are playing WikiRun, trying to navigate from one Wikipedia article to another using only links.
 
 IMPORTANT: You MUST put your final answer in <answer>NUMBER</answer> tags, where NUMBER is the link number.
 For example, if you want to choose link 3, output <answer>3</answer>.
@@ -27,9 +62,9 @@ Think about which link is most likely to lead you toward the target article.
 First, analyze each link briefly and how it connects to your goal, then select the most promising one.
 
 Remember to format your final answer by explicitly writing out the xml number tags like this: <answer>NUMBER</answer>`;
-  }
+};
 
-const API_BASE = "http://localhost:8000"
+const API_BASE = "http://localhost:8000";
 
 interface GameComponentProps {
   player: "me" | "model";
@@ -61,21 +96,32 @@ export default function GameComponent({
   const [gameStatus, setGameStatus] = useState<"playing" | "won" | "lost">(
     "playing"
   );
-
+  const [reasoningTrace, setReasoningTrace] = useState<Run | null>({
+    steps: [
+      {
+        type: "start",
+        article: startPage,
+        metadata: {
+          message: "Starting Node",
+        },
+      },
+    ],
+  });
   const [isModelThinking, setIsModelThinking] = useState<boolean>(false);
 
   const fetchCurrentPageLinks = useCallback(async () => {
     setLinksLoading(true);
-    const response = await fetch(`${API_BASE}/get_article_with_links/${currentPage}`);
+    const response = await fetch(
+      `${API_BASE}/get_article_with_links/${currentPage}`
+    );
     const data = await response.json();
     setCurrentPageLinks(data.links.slice(0, maxLinks));
     setLinksLoading(false);
   }, [currentPage, maxLinks]);
 
-  useEffect(() => { 
+  useEffect(() => {
     fetchCurrentPageLinks();
   }, [fetchCurrentPageLinks]);
-  
 
   useEffect(() => {
     if (gameStatus === "playing") {
@@ -96,55 +142,105 @@ export default function GameComponent({
     }
   }, [currentPage, targetPage, hops, maxHops]);
 
-    const handleLinkClick = (link: string) => {
-        if (gameStatus !== "playing") return;
+  const addStepToReasoningTrace = (step: Step) => {
+    setReasoningTrace((prev) => {
+      if (!prev) return { steps: [step] };
+      return { steps: [...prev.steps, step] };
+    });
+  };
 
-        setCurrentPage(link);
-        setHops((prev) => prev + 1);
-        setVisitedNodes((prev) => [...prev, link]);
+  const handleLinkClick = (link: string, userClicked: boolean = true) => {
+    if (gameStatus !== "playing") return;
+
+    setCurrentPage(link);
+    setHops((prev) => prev + 1);
+    setVisitedNodes((prev) => [...prev, link]);
+    if (userClicked) {
+      addStepToReasoningTrace({
+        type: "step",
+        article: link,
+        links: currentPageLinks,
+        metadata: {
+          message: "User clicked link",
+        },
+      });
+    }
+  };
+
+  const makeModelMove = async () => {
+    setIsModelThinking(true);
+
+    const prompt = buildPrompt(
+      currentPage,
+      targetPage,
+      visitedNodes,
+      currentPageLinks
+    );
+
+    const modelResponse = await inference({
+      apiKey:
+        window.localStorage.getItem("huggingface_access_token") || undefined,
+      model: model,
+      prompt,
+      maxTokens: maxTokens,
+    });
+    console.log("Model response", modelResponse.content);
+
+    const answer = modelResponse.content?.match(/<answer>(.*?)<\/answer>/)?.[1];
+    if (!answer) {
+      console.error("No answer found in model response");
+      return;
     }
 
-    const makeModelMove = async () => {
-        setIsModelThinking(true);
-
-        // Simulate model thinking time
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        const modelResponse = await inference(
-            {
-                apiKey: window.localStorage.getItem("huggingface_access_token") || undefined,
-                model: model,
-                prompt: buildPrompt(currentPage, targetPage, visitedNodes, currentPageLinks),
-                maxTokens: maxTokens
-            }
-        )
-        console.log("Model response", modelResponse.content);
-
-        const answer = modelResponse.content?.match(/<answer>(.*?)<\/answer>/)?.[1];
-        if (!answer) {
-            console.error("No answer found in model response");
-            return;
-        }
-
-        // try parsing the answer as an integer
-        const answerInt = parseInt(answer);
-        if (isNaN(answerInt)) {
-            console.error("Invalid answer found in model response");
-            return;
-        }
-
-        if (answerInt < 1 || answerInt > currentPageLinks.length) {
-            console.error("Selected link out of bounds", answerInt, "from ", currentPageLinks.length, "links");
-            return;
-        }
-
-        const selectedLink = currentPageLinks[answerInt - 1];
-
-        console.log("Model picked selectedLink", selectedLink, "from ", currentPageLinks);
-
-        handleLinkClick(selectedLink);
-        setIsModelThinking(false);
+    // try parsing the answer as an integer
+    const answerInt = parseInt(answer);
+    if (isNaN(answerInt)) {
+      console.error("Invalid answer found in model response");
+      return;
     }
+
+    if (answerInt < 1 || answerInt > currentPageLinks.length) {
+      console.error(
+        "Selected link out of bounds",
+        answerInt,
+        "from ",
+        currentPageLinks.length,
+        "links"
+      );
+      return;
+    }
+
+    const selectedLink = currentPageLinks[answerInt - 1];
+
+    console.log(
+      "Model picked selectedLink",
+      selectedLink,
+      "from ",
+      currentPageLinks
+    );
+
+    addStepToReasoningTrace({
+      type: "step",
+      article: selectedLink,
+      links: currentPageLinks,
+      metadata: {
+        message: "Model picked link",
+        conversation: [
+          {
+            role: "user",
+            content: prompt,
+          },
+          {
+            role: "assistant",
+            content: modelResponse.content || "",
+          },
+        ],
+      },
+    });
+
+    handleLinkClick(selectedLink, false);
+    setIsModelThinking(false);
+  };
 
   const handleGiveUp = () => {
     setGameStatus("lost");
@@ -158,8 +254,53 @@ export default function GameComponent({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card className="p-4 flex col-span-2">
+        <h2 className="text-xl font-bold">Game Status</h2>
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div className="bg-muted/30 p-3 rounded-md">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+              <ArrowRight className="h-4 w-4" /> Current
+            </div>
+            <div className="font-medium">{currentPage}</div>
+          </div>
+          <div className="bg-muted/30 p-3 rounded-md">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+              <Flag className="h-4 w-4" /> Target
+            </div>
+            <div className="font-medium">{targetPage}</div>
+          </div>
+
+          <div className="bg-muted/30 p-3 rounded-md">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+              <Hash className="h-4 w-4" /> Hops
+            </div>
+            <div className="font-medium">
+              {hops} / {maxHops}
+            </div>
+          </div>
+
+          <div className="bg-muted/30 p-3 rounded-md">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+              <Clock className="h-4 w-4" /> Time
+            </div>
+            <div className="font-medium">{formatTime(timeElapsed)}</div>
+          </div>
+        </div>
+
+        {player === "model" && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+            <div className="flex items-center gap-2">
+              <Bot className="h-4 w-4 text-blue-500" />
+              <span className="font-medium text-blue-700">
+                {model} {isModelThinking ? "is playing..." : "is playing"}
+              </span>
+            </div>
+          </div>
+        )}
+      </Card>
       {/* Left pane - Current page and available links */}
-      <Card className="p-4 flex flex-col h-[600px]">
+      <Card className="p-4 flex flex-col">
+        <h2 className="text-xl font-bold">Available Links</h2>
         <div className="flex justify-between items-center mb-4">
           {gameStatus !== "playing" && (
             <Button onClick={onReset} variant="outline">
@@ -169,7 +310,7 @@ export default function GameComponent({
         </div>
 
         {/* Wikipedia iframe (mocked) */}
-        <div className="bg-muted/30 rounded-md flex-1 mb-4 overflow-hidden">
+        {/* <div className="bg-muted/30 rounded-md flex-1 mb-4 overflow-hidden">
           <div className="bg-white p-4 border-b">
             <h2 className="text-xl font-bold">{currentPage}</h2>
             <p className="text-sm text-muted-foreground">
@@ -183,34 +324,35 @@ export default function GameComponent({
               page.
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* Available links */}
         {gameStatus === "playing" && (
           <>
-            <h4 className="text-sm font-medium mb-2">Available Links:</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-              {currentPageLinks.map((link) => (
-                <Button
-                  key={link}
-                  variant="outline"
-                  size="sm"
-                  className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
-                  onClick={() => handleLinkClick(link)}
-                  disabled={player === "model" || isModelThinking}
-                >
-                  {link}
-                </Button>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 overflow-y-auto max-h-[200px]">
+              {currentPageLinks
+                .sort((a, b) => a.localeCompare(b))
+                .map((link) => (
+                  <Button
+                    key={link}
+                    variant="outline"
+                    size="sm"
+                    className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
+                    onClick={() => handleLinkClick(link)}
+                    disabled={player === "model" || isModelThinking}
+                  >
+                    {link}
+                  </Button>
+                ))}
             </div>
 
             {player === "model" && (
-                <Button
-                    onClick={makeModelMove}
-                    disabled={isModelThinking || linksLoading}
-                >
-                    Make Move
-                </Button>
+              <Button
+                onClick={makeModelMove}
+                disabled={isModelThinking || linksLoading}
+              >
+                Make Move
+              </Button>
             )}
           </>
         )}
@@ -248,59 +390,19 @@ export default function GameComponent({
           <div className="bg-red-100 text-red-800 p-4 rounded-md mt-auto">
             <h3 className="font-bold">Game Over</h3>
             <p>
-              {player === "model" ? `${model} didn't` : "You didn't"}{" "}
-              reach {targetPage} within {maxHops} hops.
+              {player === "model" ? `${model} didn't` : "You didn't"} reach{" "}
+              {targetPage} within {maxHops} hops.
             </p>
           </div>
         )}
       </Card>
 
+      <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
+        <ReasoningTrace run={reasoningTrace} />
+      </Card>
+
       {/* Right pane - Game stats and graph */}
-      <Card className="p-4 flex flex-col h-[600px]">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Flag className="h-4 w-4" /> Target
-            </div>
-            <div className="font-medium">{targetPage}</div>
-          </div>
-
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <ArrowRight className="h-4 w-4" /> Current
-            </div>
-            <div className="font-medium">{currentPage}</div>
-          </div>
-
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Hash className="h-4 w-4" /> Hops
-            </div>
-            <div className="font-medium">
-              {hops} / {maxHops}
-            </div>
-          </div>
-
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Clock className="h-4 w-4" /> Time
-            </div>
-            <div className="font-medium">{formatTime(timeElapsed)}</div>
-          </div>
-        </div>
-
-        {player === "model" && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
-            <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4 text-blue-500" />
-              <span className="font-medium text-blue-700">
-                {model}{" "}
-                {isModelThinking ? "is playing..." : "is playing"}
-              </span>
-            </div>
-          </div>
-        )}
-
+      <Card className="p-4 flex flex-col">
         <div className="flex-1 bg-muted/30 rounded-md p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
             <BarChart className="h-4 w-4" /> Path Visualization

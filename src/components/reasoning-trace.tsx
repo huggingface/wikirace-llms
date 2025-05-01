@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,14 +13,14 @@ interface StepMetadata {
   conversation?: Message[];
 }
 
-interface Step {
+export interface Step {
   type: string;
   article: string;
   links?: unknown[];
   metadata?: StepMetadata;
 }
 
-interface Run {
+export interface Run {
   steps: Step[];
 }
 
@@ -84,10 +83,7 @@ export default function ReasoningTrace({ run }: ReasoningTraceProps) {
         {run.steps.map((step, index) => (
           <div key={index} className="py-4 px-2">
             <div>
-              <h4 className="text-base font-semibold">Step {index + 1} - {step.type}</h4>
-              <p className="text-sm text-muted-foreground pt-1">
-                Current: {step.article} {step.links && `(${step.links.length} links)`}
-              </p>
+              <h4 className="text-base font-semibold">Step {index + 1} - {step.article}</h4>
               {step.metadata?.message && (
                  <p className="text-sm text-muted-foreground pt-1 italic">"{step.metadata.message}"</p>
               )}
