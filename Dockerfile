@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install nodejs -y
 # print npm path
 RUN which npm
 
-Set up a new user named "user" with user ID 1000
+#Set up a new user named "user" with user ID 1000
 RUN useradd -m -u 1000 user
 
 # Switch to the "user" user
