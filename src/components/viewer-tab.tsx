@@ -3,9 +3,9 @@
 import * as hub from "@huggingface/hub";
 import type { RepoDesignation } from "@huggingface/hub";
 
-// import mockResults from "../../qwen3-final-results.json";
+import mockResults from "../../qwen3-final-results.json"
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -26,15 +26,6 @@ type Run = {
   hops: number;
 };
 
-// Sample data - would be fetched from HuggingFace dataset in a real implementation
-const sampleRuns = [
-  { id: 1, start: "Pokemon", end: "Canada", hops: 16 },
-  { id: 2, start: "Pokemon", end: "Canada", hops: 16 },
-  { id: 3, start: "Pokemon", end: "Canada", hops: 16 },
-  { id: 4, start: "Pokemon", end: "Canada", hops: 16 },
-  // Add more sample runs as needed
-];
-
 const datasets = [
   { id: "dataset1", name: "Eureka-Lab/PHYBench" },
   { id: "dataset2", name: "Eureka-Lab/PHYBench-LLM" },
@@ -48,8 +39,8 @@ export default function ViewerTab() {
 
   const fetchDataset = async () => {
     console.log("Fetching dataset...");
-    // console.log(Object.keys(mockResults));
-    // setRuns(mockResults.runs.slice(0, 10));
+    console.log(Object.keys(mockResults));
+    setRuns(mockResults.runs.slice(0, 1000));
 
     return;
     setLoading(true);
@@ -85,6 +76,10 @@ export default function ViewerTab() {
     setSelectedRun(runId);
   };
 
+  const filterRuns = useMemo(() => {
+    return runs.filter(run => run.result === "win");
+  }, [runs]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
       <div className="md:col-span-3">
@@ -118,16 +113,16 @@ export default function ViewerTab() {
       </div>
 
       <div className="md:col-span-5">
-        <Card className="w-full h-[600px] flex items-center justify-center">
-          <ForceDirectedGraph runs={runs} runId={selectedRun} />
+        <Card className="h-[800px] w-[800px] flex items-center justify-center p-0 m-0">
+          <ForceDirectedGraph runs={filterRuns} runId={selectedRun} />
         </Card>
       </div>
 
-      <div className="md:col-span-4">
+      {/* <div className="md:col-span-4">
         <Card className="w-full h-[600px] p-4">
           <ReasoningTrace run={runs[selectedRun]} />
         </Card>
-      </div>
+      </div> */}
     </div>
   );
 }
