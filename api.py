@@ -5,8 +5,10 @@ from typing import Tuple, List, Optional
 from functools import lru_cache
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
+from fastapi.responses import FileResponse
 
 app = FastAPI(title="WikiSpeedia API")
 
@@ -59,7 +61,7 @@ db = SQLiteDB(
     os.getenv("WIKISPEEDIA_DB_PATH", "/Users/jts/daily/wikihop/db/data/wikihop.db")
 )
 
-@app.get("/", response_model=HealthResponse)
+@app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint that returns the article count"""
     return HealthResponse(
@@ -74,6 +76,10 @@ async def get_article(article_title: str):
     if title is None:
         raise HTTPException(status_code=404, detail="Article not found")
     return ArticleResponse(title=title, links=links)
+
+
+# Mount the dist folder for static files
+app.mount("/", StaticFiles(directory="dist", html=True), name="static")
 
 
 if __name__ == "__main__":

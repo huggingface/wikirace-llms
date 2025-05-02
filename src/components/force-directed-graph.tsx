@@ -18,7 +18,6 @@ export default function ForceDirectedGraph({runs, runId }: ForceDirectedGraphPro
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        console.log("runs", runs);
 
         const newGraphData: {nodes: {id: string}[], links: {source: string, target: string}[]} = {nodes: [], links: []};
         const nodesSet: Set<string> = new Set();

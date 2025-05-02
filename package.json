@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "deploy": "yarn build && huggingface-cli upload --repo-type space --private HuggingFaceTB/Wikispeedia dist",
     "lint": "eslint .",
     "preview": "vite preview"
