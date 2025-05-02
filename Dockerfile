@@ -4,15 +4,18 @@ FROM python:3.9
 ENV PYTHONUNBUFFERED 1
 RUN apt-get update && apt-get install nodejs -y
 
-# Set up a new user named "user" with user ID 1000
-# RUN useradd -m -u 1000 user
+# print npm path
+RUN which npm
 
-# # Switch to the "user" user
-# USER user
+Set up a new user named "user" with user ID 1000
+RUN useradd -m -u 1000 user
 
-# # Set home to the user's home directory
-# ENV HOME=/home/user \
-# 	PATH=/home/user/.local/bin:$PATH
+# Switch to the "user" user
+USER user
+
+# Set home to the user's home directory
+ENV HOME=/home/user \
+	PATH=/home/user/.local/bin:$PATH
 
 # Set the working directory to the user's home directory
 WORKDIR $HOME/app
