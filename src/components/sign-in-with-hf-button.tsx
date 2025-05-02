@@ -12,10 +12,7 @@ const SSO_URL = `https://huggingface.co/oauth/authorize?client_id=${CLIENT_ID}&r
 const OAUTH_API_BASE = "https://huggingface.co/oauth/token";
 const CLIENT_SECRET = import.meta.env.VITE_HUGGINGFACE_CLIENT_SECRET; // THIS IS UNSAFE, must fix before real deploy
 
-import {
-  oauthLoginUrl,
-  oauthHandleRedirectIfPresent,
-} from "@huggingface/hub";
+import { oauthLoginUrl, oauthHandleRedirectIfPresent } from "@huggingface/hub";
 
 export const SignInWithHuggingFaceButton = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -25,7 +22,7 @@ export const SignInWithHuggingFaceButton = () => {
   // useEffect(() => {
   //   const idToken = window.localStorage.getItem("huggingface_id_token");
   //   const accessToken = window.localStorage.getItem("huggingface_access_token");
-    
+
   //   if (idToken && accessToken) {
   //     const idTokenObject = JSON.parse(idToken);
   //     if (idTokenObject.exp > Date.now() / 1000) {
@@ -35,7 +32,6 @@ export const SignInWithHuggingFaceButton = () => {
   //       return;
   //     }
   //   }
-
 
   //   async function fetchToken() {
   //     const code = new URLSearchParams(window.location.search).get("code");
@@ -75,19 +71,26 @@ export const SignInWithHuggingFaceButton = () => {
   useEffect(() => {
     async function fetchToken() {
       console.log("fetching token", window.location.href);
-    const oauthResult = await oauthHandleRedirectIfPresent();
+      const oauthResult = await oauthHandleRedirectIfPresent();
 
-    if (!oauthResult) {
-      // If the user is not logged in, redirect to the login page
-      window.location.href = await oauthLoginUrl();
-    }
+      if (!oauthResult) {
+        // If the user is not logged in, redirect to the login page
+        window.location.href = await oauthLoginUrl();
+      }
 
-    // You can use oauthResult.accessToken, oauthResult.accessTokenExpiresAt and oauthResult.userInfo
-    console.log(oauthResult);
+      // You can use oauthResult.accessToken, oauthResult.accessTokenExpiresAt and oauthResult.userInfo
+      console.log(oauthResult);
     }
 
     fetchToken();
   }, []);
+
+  const handleLogin = async () => {
+    window.location.href =
+      (await oauthLoginUrl({
+        scopes: window.huggingface.variables.OAUTH_SCOPES,
+      })) + "&prompt=consent";
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -98,7 +101,7 @@ export const SignInWithHuggingFaceButton = () => {
   }
 
   return (
-    <a href={SSO_URL} rel="nofollow">
+    <a onClick={handleLogin} href="#" rel="nofollow">
       <img
         src="https://huggingface.co/datasets/huggingface/badges/resolve/main/sign-in-with-huggingface-xl.svg"
         alt="Sign in with Hugging Face"
