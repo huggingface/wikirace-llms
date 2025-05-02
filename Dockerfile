@@ -38,6 +38,10 @@ COPY --chown=user . $HOME/app
 RUN npm install --force
 RUN npm run build
 
+ADD --chown=user https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/blob/main/wikihop.db wikihop.db
+
+ENV WIKISPEEDIA_DB_PATH=/home/user/app/wikihop.db
+
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
 
 
