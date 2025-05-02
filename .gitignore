@@ -27,3 +27,5 @@ dist-ssr
 tmp
 
 qwen3-final-results.json
+
+__pycache__

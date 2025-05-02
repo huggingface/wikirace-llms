@@ -34,6 +34,11 @@ RUN pip install -r requirements.txt
 # Copy the current directory contents into the container at $HOME/app setting the owner to the user
 COPY --chown=user . $HOME/app
 
+ENV VITE_ENV=production
+
+RUN --mount=type=secret,id=HUGGINGFACE_CLIENT_SECRET,mode=0444,required=true \
+   echo "HUGGINGFACE_CLIENT_SECRET=$(cat /run/secrets/HUGGINGFACE_CLIENT_SECRET)" >> .env
+   echo "VITE_ENV=production" >> .env
 
 RUN yarn install
 RUN yarn build
@@ -42,9 +47,8 @@ RUN curl -L https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/res
 
 ENV WIKISPEEDIA_DB_PATH=/home/user/app/wikihop.db
 
-ENV VITE_ENV=production
 
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860", "--env-file", ".env"]
 
 
 # # Download a checkpoint
