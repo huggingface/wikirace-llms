@@ -38,7 +38,8 @@ ENV VITE_ENV=production
 
 RUN --mount=type=secret,id=HUGGINGFACE_CLIENT_SECRET,mode=0444,required=true \
    echo "HUGGINGFACE_CLIENT_SECRET=$(cat /run/secrets/HUGGINGFACE_CLIENT_SECRET)" >> .env
-   echo "VITE_ENV=production" >> .env
+   
+RUN echo "VITE_ENV=production" >> .env
 
 RUN yarn install
 RUN yarn build
