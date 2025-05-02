@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const API_BASE = "http://localhost:8000/";
+const API_BASE = "";
 
 // Available AI models
 const aiModels = [
@@ -48,7 +48,7 @@ export default function PlayTab() {
     fetchAvailableModels();
     const checkServerConnection = async () => {
       try {
-        const response = await fetch(API_BASE);
+        const response = await fetch(API_BASE + "/health");
         setIsServerConnected(response.ok);
       } catch {
         setIsServerConnected(false);

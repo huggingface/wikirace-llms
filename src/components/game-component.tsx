@@ -65,7 +65,7 @@ First, analyze each link briefly and how it connects to your goal, then select t
 Remember to format your final answer by explicitly writing out the xml number tags like this: <answer>NUMBER</answer>`;
 };
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "";
 
 interface GameComponentProps {
   player: "me" | "model";
