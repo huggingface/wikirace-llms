@@ -9,8 +9,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# print npm path
-RUN which npm
+RUN npm install -g yarn
 
 #Set up a new user named "user" with user ID 1000
 RUN useradd -m -u 1000 user
@@ -35,7 +34,6 @@ RUN pip install -r requirements.txt
 # Copy the current directory contents into the container at $HOME/app setting the owner to the user
 COPY --chown=user . $HOME/app
 
-RUN npm install -g yarn
 
 RUN yarn install
 RUN yarn build
