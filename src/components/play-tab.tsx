@@ -21,15 +21,6 @@ import {
 
 const API_BASE = "";
 
-// Available AI models
-const aiModels = [
-  { id: "gpt-4o", name: "GPT-4o", category: "OpenAI" },
-  { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet", category: "Anthropic" },
-  { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", category: "Google" },
-  { id: "llama-3-70b", name: "Llama 3 70B", category: "Meta" },
-  { id: "mistral-large", name: "Mistral Large", category: "Mistral AI" },
-];
-
 export default function PlayTab() {
   const [player, setPlayer] = useState<"me" | "model">("me");
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
@@ -95,127 +86,25 @@ export default function PlayTab() {
     <div className="space-y-4">
       {!isGameStarted ? (
         <Card className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="player-select" className="block mb-2">
-                  Player
-                </Label>
-                <Tabs
-                  defaultValue="me"
-                  value={player}
-                  onValueChange={handlePlayerChange}
-                  className="w-full"
-                >
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="me">Me</TabsTrigger>
-                    <TabsTrigger value="model">Model</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+          
 
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 text-sm">
-                  {isServerConnected ? (
-                    <Wifi className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <WifiOff className="h-4 w-4 text-red-500" />
-                  )}
-                  <span
-                    className={
-                      isServerConnected ? "text-green-500" : "text-red-500"
-                    }
-                  >
-                    {isServerConnected ? "Connected" : "Disconnected"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-6">
             <div>
-              <Label htmlFor="max-hops" className="block mb-2">
-                Max Hops
-              </Label>
-              <Input
-                id="max-hops"
-                type="number"
-                value={maxHops}
-                onChange={(e) => setMaxHops(Number.parseInt(e.target.value))}
-                min={1}
-                max={100}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="node-list" className="block mb-2">
-                Node List
+              <Label htmlFor="player-select" className="block mb-2">
+                Player
               </Label>
               <Tabs
-                defaultValue="default"
-                value={nodeList}
-                onValueChange={setNodeList}
+                defaultValue="me"
+                value={player}
+                onValueChange={handlePlayerChange}
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="default">Default</TabsTrigger>
-                  <TabsTrigger value="custom">Custom</TabsTrigger>
+                  <TabsTrigger value="me">Me</TabsTrigger>
+                  <TabsTrigger value="model">Model</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
-
-            {player === "model" && (
-              <div className="md:col-span-3 animate-in fade-in slide-in-from-top-5 duration-300 grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                <div>
-                  <Label htmlFor="model-select" className="block mb-2">
-                    Select Model
-                  </Label>
-                  <Select
-                    value={selectedModel}
-                    onValueChange={setSelectedModel}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={`Select a model (${modelList.length} models available)`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelList.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="max-tokens" className="block mb-2">
-                    Max Tokens
-                  </Label>
-                  <Input
-                    id="max-tokens" 
-                    type="number"
-                    value={maxTokens}
-                    onChange={(e) => setMaxTokens(Number.parseInt(e.target.value))}
-                    min={1}
-                    max={10000}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="max-links" className="block mb-2">
-                    Max Links
-                  </Label>
-                  <Input
-                    id="max-links"
-                    type="number"
-                    value={maxLinks}
-                    onChange={(e) => setMaxLinks(Number.parseInt(e.target.value))}
-                    min={1}
-                    max={1000}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div>
               <Label htmlFor="start-page" className="block mb-2">
                 Start Page
@@ -234,7 +123,7 @@ export default function PlayTab() {
                   htmlFor="target-page"
                   className="flex items-center gap-1 mb-2"
                 >
-                  Target Page <Sun className="h-4 w-4 text-yellow-500" />
+                  Target Page
                 </Label>
                 <Input
                   id="target-page"
@@ -248,6 +137,58 @@ export default function PlayTab() {
               </Button>
             </div>
           </div>
+
+          {player === "model" && (
+            <div className="md:col-span-3 animate-in fade-in slide-in-from-top-5 duration-300 grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+              <div>
+                <Label htmlFor="model-select" className="block mb-2">
+                  Select Model
+                </Label>
+                <Select value={selectedModel} onValueChange={setSelectedModel}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={`Select a model (${modelList.length} models available)`}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modelList.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="max-tokens" className="block mb-2">
+                  Max Tokens
+                </Label>
+                <Input
+                  id="max-tokens"
+                  type="number"
+                  value={maxTokens}
+                  onChange={(e) =>
+                    setMaxTokens(Number.parseInt(e.target.value))
+                  }
+                  min={1}
+                  max={10000}
+                />
+              </div>
+              <div>
+                <Label htmlFor="max-links" className="block mb-2">
+                  Max Links
+                </Label>
+                <Input
+                  id="max-links"
+                  type="number"
+                  value={maxLinks}
+                  onChange={(e) => setMaxLinks(Number.parseInt(e.target.value))}
+                  min={1}
+                  max={1000}
+                />
+              </div>
+            </div>
+          )}
         </Card>
       ) : (
         <GameComponent
