@@ -3,9 +3,9 @@
 import * as hub from "@huggingface/hub";
 import type { RepoDesignation } from "@huggingface/hub";
 
-import mockResults from "../../qwen3-final-results.json"
-
-import { useMemo, useState } from "react";
+import mockResults from "../../results/qwen3.json"
+// import mockResults from "../../qwen3-final-results.json"
+import { useMemo, useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ForceDirectedGraph from "@/components/force-directed-graph";
-import ReasoningTrace from "@/components/reasoning-trace";
 import RunsList from "@/components/runs-list";
 
 type Run = {
@@ -40,7 +39,7 @@ export default function ViewerTab() {
   const fetchDataset = async () => {
     console.log("Fetching dataset...");
     console.log(Object.keys(mockResults));
-    setRuns(mockResults.runs.slice(0, 1000));
+    setRuns(mockResults.runs);
 
     return;
     setLoading(true);
@@ -67,6 +66,10 @@ export default function ViewerTab() {
     // setLoading(false);
   };
 
+  useEffect(() => {
+    fetchDataset();
+  }, []);
+
   const handleDatasetChange = (value: string) => {
     setSelectedDataset(value);
     setSelectedRun(null);
@@ -83,7 +86,7 @@ export default function ViewerTab() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
       <div className="md:col-span-3">
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <Select value={selectedDataset} onValueChange={handleDatasetChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="SELECT DATASET" />
@@ -98,7 +101,7 @@ export default function ViewerTab() {
           </Select>
           <Button onClick={fetchDataset}>Fetch Dataset</Button>
           {loading && <p>Loading...</p>}
-        </div>
+        </div> */}
 
         <div className="bg-card rounded-lg p-3 border">
           <h3 className="text-sm font-medium mb-2 text-muted-foreground">
