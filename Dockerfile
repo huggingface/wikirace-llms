@@ -2,7 +2,7 @@ FROM python:3.9
 
 # install nodejs
 ENV PYTHONUNBUFFERED 1
-RUN apt-get update && apt-get install nodejs
+RUN apt-get update && apt-get install nodejs -y
 
 # Set up a new user named "user" with user ID 1000
 RUN useradd -m -u 1000 user
