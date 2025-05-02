@@ -35,7 +35,7 @@ RUN pip install -r requirements.txt
 # Copy the current directory contents into the container at $HOME/app setting the owner to the user
 COPY --chown=user . $HOME/app
 
-RUN npm install
+RUN npm install --force
 RUN npm run build
 
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
