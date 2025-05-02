@@ -1,143 +1,109 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import ForceGraph2D from "react-force-graph-2d";
+import { Run } from "./reasoning-trace";
+
 // This is a placeholder component for the force-directed graph
 // In a real implementation, you would use a library like D3.js or react-force-graph
 
 interface ForceDirectedGraphProps {
   runId: number | null;
+  runs: Run[];
 }
 
-export default function ForceDirectedGraph({ runId }: ForceDirectedGraphProps) {
-  if (!runId) {
+export default function ForceDirectedGraph({runs, runId }: ForceDirectedGraphProps) {
+    const [graphData, setGraphData] = useState<{nodes: {id: string}[], links: {source: string, target: string}[]}>({nodes: [], links: []});
+    const [dimensions, setDimensions] = useState({ width: 300, height: 300 });
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+
+        const newGraphData: {nodes: {id: string}[], links: {source: string, target: string}[]} = {nodes: [], links: []};
+        const nodesSet: Set<string> = new Set();
+        const mainNodeSet: Set<string> = new Set();
+
+        if(runs) {
+            runs.forEach((run) => {
+                // add in src and dst to nodes
+
+                mainNodeSet.add(run.start_article);
+                mainNodeSet.add(run.destination_article);
+
+                for(let i = 0; i < run.steps.length - 1; i++) {
+                    const step = run.steps[i];
+                    const nextStep = run.steps[i + 1];
+
+                    if(!mainNodeSet.has(step.article)) {
+                        nodesSet.add(step.article);
+                    }
+
+                    if(!mainNodeSet.has(nextStep.article)) {
+                        nodesSet.add(nextStep.article);
+                    }
+
+                    newGraphData.links.push({source: step.article, target: nextStep.article});
+                }
+
+                const mainNodes = Array.from(mainNodeSet);
+                const radius = 200; // Radius of the circle
+                const centerX = 400; // Center X coordinate
+                const centerY = 300; // Center Y coordinate
+
+                newGraphData.nodes = mainNodes.map((id, index) => {
+                    const angle = (index * 2 * Math.PI) / mainNodes.length;
+                    return {
+                        id,
+                        fx: centerX + radius * Math.cos(angle),
+                        fy: centerY + radius * Math.sin(angle),
+                        color: "red"
+                    };
+                });
+                newGraphData.nodes.push(...Array.from(nodesSet).map((id) => ({id})));
+            });
+
+            setGraphData(newGraphData);
+        }
+    }, [runs]);
+
+    // useEffect(() => {
+    //     if (!containerRef.current) return;
+    //     const observer = new window.ResizeObserver(entries => {
+    //         for (const entry of entries) {
+    //             const { width, height } = entry.contentRect;
+    //             setDimensions({ width, height });
+    //         }
+    //     });
+    //     observer.observe(containerRef.current);
+    //     // Set initial size
+    //     setDimensions({
+    //         width: containerRef.current.offsetWidth,
+    //         height: containerRef.current.offsetHeight
+    //     });
+    //     return () => observer.disconnect();
+    // }, []);
+
+    // if (!runId) {
+    //     return (
+    //         <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+    //             Select a run to view the path graph
+    //         </div>
+    //     );
+    // }
+
     return (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-        Select a run to view the path graph
-      </div>
+        <div className="w-full h-full flex items-center justify-center">
+            <div ref={containerRef} className="w-full h-full">
+                <ForceGraph2D
+                    graphData={graphData}
+                    nodeLabel="id"
+                    linkLabel="id"
+                    nodeColor="color"
+                    linkColor="gray"
+                    width={dimensions.width}
+                    height={dimensions.height}
+                />
+            </div>
+        </div>
     );
-  }
-
-  // This is just a placeholder SVG - in a real implementation,
-  // you would render an actual force-directed graph
-  return (
-    <div className="w-full h-full flex items-center justify-center">
-      <svg width="100%" height="100%" viewBox="0 0 800 600">
-        {/* Center node */}
-        <circle cx="400" cy="300" r="20" fill="#ff4d4f" />
-
-        {/* Surrounding nodes */}
-        <circle cx="200" cy="150" r="15" fill="#ff9c6e" />
-        <circle cx="600" cy="150" r="15" fill="#ff9c6e" />
-        <circle cx="200" cy="450" r="15" fill="#ff9c6e" />
-        <circle cx="600" cy="450" r="15" fill="#ff9c6e" />
-        <circle cx="300" cy="100" r="15" fill="#ff9c6e" />
-        <circle cx="500" cy="100" r="15" fill="#ff9c6e" />
-        <circle cx="300" cy="500" r="15" fill="#ff9c6e" />
-        <circle cx="500" cy="500" r="15" fill="#ff9c6e" />
-
-        {/* Lines connecting nodes */}
-        <line
-          x1="400"
-          y1="300"
-          x2="200"
-          y2="150"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-        <line
-          x1="400"
-          y1="300"
-          x2="600"
-          y2="150"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-        <line
-          x1="400"
-          y1="300"
-          x2="200"
-          y2="450"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-        <line
-          x1="400"
-          y1="300"
-          x2="600"
-          y2="450"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-        <line
-          x1="400"
-          y1="300"
-          x2="300"
-          y2="100"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-        <line
-          x1="400"
-          y1="300"
-          x2="500"
-          y2="100"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-        <line
-          x1="400"
-          y1="300"
-          x2="300"
-          y2="500"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-        <line
-          x1="400"
-          y1="300"
-          x2="500"
-          y2="500"
-          stroke="#ffa39e"
-          strokeWidth="2"
-        />
-
-        {/* Secondary connections */}
-        <line
-          x1="200"
-          y1="150"
-          x2="300"
-          y2="100"
-          stroke="#ffa39e"
-          strokeWidth="1"
-          opacity="0.5"
-        />
-        <line
-          x1="600"
-          y1="150"
-          x2="500"
-          y2="100"
-          stroke="#ffa39e"
-          strokeWidth="1"
-          opacity="0.5"
-        />
-        <line
-          x1="200"
-          y1="450"
-          x2="300"
-          y2="500"
-          stroke="#ffa39e"
-          strokeWidth="1"
-          opacity="0.5"
-        />
-        <line
-          x1="600"
-          y1="450"
-          x2="500"
-          y2="500"
-          stroke="#ffa39e"
-          strokeWidth="1"
-          opacity="0.5"
-        />
-      </svg>
-    </div>
-  );
 }

@@ -1,11 +1,14 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ViewerTab from "@/components/viewer-tab";
 import PlayTab from "@/components/play-tab";
-
+import { SignInWithHuggingFaceButton } from "@/components/sign-in-with-hf-button";
 export default function Home() {
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Wikispeedia</h1>
+      <div className="flex flex-row justify-between">
+        <h1 className="text-3xl font-bold mb-6">Wikispeedia</h1>
+        <SignInWithHuggingFaceButton />
+      </div>
 
       <Tabs defaultValue="view" className="w-full">
         <TabsList className="mb-4">

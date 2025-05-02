@@ -4,10 +4,9 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface Run {
-  id: number;
-  start: string;
-  end: string;
-  hops: number;
+  start_article: string;
+  destination_article: string;
+  steps: string[];
 }
 
 interface RunsListProps {
@@ -23,21 +22,21 @@ export default function RunsList({
 }: RunsListProps) {
   return (
     <div className="h-[600px] overflow-y-auto space-y-2 pr-1">
-      {runs.map((run) => (
+      {runs.map((run, index) => (
         <Card
-          key={run.id}
+          key={index}
           className={cn(
             "p-3 cursor-pointer transition-all border",
-            selectedRunId === run.id
+            selectedRunId === index
               ? "bg-primary/10 border-primary/50 shadow-sm"
               : "hover:bg-muted/80 border-transparent"
           )}
-          onClick={() => onSelectRun(run.id)}
+          onClick={() => onSelectRun(index)}
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium flex items-center">
-                <span>{run.start}</span>
+                <span>{run.start_article}</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -53,11 +52,11 @@ export default function RunsList({
                   <path d="M5 12h14" />
                   <path d="m12 5 7 7-7 7" />
                 </svg>
-                <span>{run.end}</span>
+                <span>{run.destination_article}</span>
               </p>
-              <p className="text-sm text-muted-foreground">{run.hops} hops</p>
+              <p className="text-sm text-muted-foreground">{run.steps.length} hops</p>
             </div>
-            {selectedRunId === run.id && (
+            {selectedRunId === index && (
               <div
                 className="h-2 w-2 rounded-full bg-primary"
                 aria-hidden="true"

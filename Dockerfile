@@ -1,0 +1,38 @@
+FROM python:3.9
+
+# Set up a new user named "user" with user ID 1000
+RUN useradd -m -u 1000 user
+
+# Switch to the "user" user
+USER user
+
+# Set home to the user's home directory
+ENV HOME=/home/user \
+	PATH=/home/user/.local/bin:$PATH
+
+# Set the working directory to the user's home directory
+WORKDIR $HOME/app
+
+# install nodejs
+ENV PYTHONUNBUFFERED 1
+RUN apt-get update && apt-get install nodejs
+
+COPY requirements.txt .
+
+# Try and run pip command after setting the user with `USER user` to avoid permission issues with Python
+RUN pip install --no-cache-dir --upgrade pip
+
+RUN pip install -r requirements.txt
+
+# Copy the current directory contents into the container at $HOME/app setting the owner to the user
+COPY --chown=user . $HOME/app
+
+RUN npm install
+RUN npm run build
+
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
+
+
+# # Download a checkpoint
+# RUN mkdir content
+# ADD --chown=user https://<SOME_ASSET_URL> content/<SOME_ASSET_NAME>
