@@ -1,8 +1,13 @@
 FROM python:3.9
 
-# install nodejs
+# install nodejs and npm
 ENV PYTHONUNBUFFERED 1
-RUN apt-get update && apt-get install nodejs -y
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # print npm path
 RUN which npm
