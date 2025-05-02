@@ -56,6 +56,10 @@ class SQLiteDB:
         links = json.loads(article["links_json"])
         return article["title"], links
 
+    def get_all_articles(self):
+        self.cursor.execute("SELECT title FROM core_articles")
+        return [row[0] for row in self.cursor.fetchall()]
+
 # Initialize database connection
 db = SQLiteDB(
     os.getenv("WIKISPEEDIA_DB_PATH", "/Users/jts/daily/wikihop/db/data/wikihop.db")
@@ -68,6 +72,11 @@ async def health_check():
         status="healthy",
         article_count=db._article_count
     )
+
+@app.get("/get_all_articles", response_model=List[str])
+async def get_all_articles():
+    """Get all articles"""
+    return db.get_all_articles()
 
 @app.get("/get_article_with_links/{article_title}", response_model=ArticleResponse)
 async def get_article(article_title: str):

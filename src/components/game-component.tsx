@@ -7,35 +7,8 @@ import { Flag, Clock, Hash, BarChart, ArrowRight, Bot } from "lucide-react";
 import inference from "@/lib/inference";
 import ReasoningTrace, { Run, Step } from "./reasoning-trace";
 import ForceDirectedGraph from "./force-directed-graph";
+import { API_BASE } from "@/lib/constants";
 
-const mockRun: Run = {
-  steps: [
-    {
-      type: "start",
-      article: "Dogs",
-      metadata: {
-        message: "Starting Node",
-      },
-    },
-    {
-      type: "step",
-      article: "Dogs",
-      links: ["Dogs", "Cats", "Birds"],
-      metadata: {
-        conversation: [
-          {
-            role: "user",
-            content: "I want to go to the moon",
-          },
-          {
-            role: "assistant",
-            content: "I want to go to the moon",
-          },
-        ],
-      },
-    },
-  ],
-};
 const buildPrompt = (
   current: string,
   target: string,
@@ -64,8 +37,6 @@ First, analyze each link briefly and how it connects to your goal, then select t
 
 Remember to format your final answer by explicitly writing out the xml number tags like this: <answer>NUMBER</answer>`;
 };
-
-const API_BASE = "";
 
 interface GameComponentProps {
   player: "me" | "model";
@@ -97,6 +68,7 @@ export default function GameComponent({
   const [gameStatus, setGameStatus] = useState<"playing" | "won" | "lost">(
     "playing"
   );
+
   const [reasoningTrace, setReasoningTrace] = useState<Run | null>({
     start_article: startPage,
     destination_article: targetPage,
@@ -151,8 +123,17 @@ export default function GameComponent({
 
   const addStepToReasoningTrace = (step: Step) => {
     setReasoningTrace((prev) => {
-      if (!prev) return { steps: [step], start_article: startPage, destination_article: targetPage };
-      return { steps: [...prev.steps, step], start_article: startPage, destination_article: targetPage };
+      if (!prev)
+        return {
+          steps: [step],
+          start_article: startPage,
+          destination_article: targetPage,
+        };
+      return {
+        steps: [...prev.steps, step],
+        start_article: startPage,
+        destination_article: targetPage,
+      };
     });
   };
 
@@ -316,23 +297,6 @@ export default function GameComponent({
           )}
         </div>
 
-        {/* Wikipedia iframe (mocked) */}
-        {/* <div className="bg-muted/30 rounded-md flex-1 mb-4 overflow-hidden">
-          <div className="bg-white p-4 border-b">
-            <h2 className="text-xl font-bold">{currentPage}</h2>
-            <p className="text-sm text-muted-foreground">
-              https://en.wikipedia.org/wiki/{currentPage.replace(/\s+/g, "_")}
-            </p>
-          </div>
-          <div className="p-4">
-            <p className="text-sm">
-              This is a mock Wikipedia page for {currentPage}. In the actual
-              implementation, this would be an iframe showing the real Wikipedia
-              page.
-            </p>
-          </div>
-        </div> */}
-
         {/* Available links */}
         {gameStatus === "playing" && (
           <>
@@ -403,22 +367,33 @@ export default function GameComponent({
           </div>
         )}
       </Card>
-
+      {/* 
       <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
         <ReasoningTrace run={reasoningTrace} />
+      </Card> */}
+
+      <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
+        <iframe
+          src={`https://simple.wikipedia.org/wiki/${currentPage.replace(
+            /\s+/g,
+            "_"
+          )}`}
+          className="w-full h-full"
+        />
       </Card>
 
       {/* Right pane - Game stats and graph */}
-      <Card className="p-4 flex flex-col">
+      {/* <Card className="p-4 flex flex-col overflow-y-auto">
         <div className="flex-1 bg-muted/30 rounded-md p-4">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
             <BarChart className="h-4 w-4" /> Path Visualization
           </div>
 
-          <ForceDirectedGraph runs={runs} runId={null} />
+          <div className="h-[500px]">
+            <ForceDirectedGraph runs={runs} runId={0} />
+          </div>
         </div>
-      </Card>
+      </Card> */}
     </div>
   );
 }
-

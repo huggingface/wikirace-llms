@@ -42,6 +42,8 @@ RUN curl -L https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/res
 
 ENV WIKISPEEDIA_DB_PATH=/home/user/app/wikihop.db
 
+ENV VITE_API_BASE=""
+
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "7860"]
 
 

@@ -6,8 +6,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Sun } from "lucide-react";
-import { Wifi, WifiOff } from "lucide-react";
 import GameComponent from "@/components/game-component";
 import {
   Select,
@@ -18,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { API_BASE } from "@/lib/constants";
+import { VirtualizedCombobox } from "./ui/virtualized-combobox";
 
-const API_BASE = "";
 
 export default function PlayTab() {
   const [player, setPlayer] = useState<"me" | "model">("me");
@@ -33,7 +32,7 @@ export default function PlayTab() {
   const [maxLinks, setMaxLinks] = useState<number>(200);
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
   const [modelList, setModelList] = useState<{id: string, name: string, author: string, likes: number, trendingScore: number}[]>([]);
-
+  const [allArticles, setAllArticles] = useState<string[]>([]);
   // Server connection check
   useEffect(() => {
     fetchAvailableModels();
@@ -52,6 +51,15 @@ export default function PlayTab() {
 
     return () => clearInterval(interval);
   }, []);
+
+    useEffect(() => {
+      const fetchAllArticles = async () => {
+        const response = await fetch(`${API_BASE}/get_all_articles`);
+        const data = await response.json();
+        setAllArticles(data);
+      };
+      fetchAllArticles();
+    }, []);
 
   const handleStartGame = () => {
     setIsGameStarted(true);
@@ -86,8 +94,6 @@ export default function PlayTab() {
     <div className="space-y-4">
       {!isGameStarted ? (
         <Card className="p-6">
-          
-
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-6">
             <div>
               <Label htmlFor="player-select" className="block mb-2">
@@ -109,27 +115,24 @@ export default function PlayTab() {
               <Label htmlFor="start-page" className="block mb-2">
                 Start Page
               </Label>
-              <Input
-                id="start-page"
+              <VirtualizedCombobox
+                options={allArticles}
                 value={startPage}
-                onChange={(e) => setStartPage(e.target.value)}
-                placeholder="e.g. Dogs"
+                onValueChange={(value) => setStartPage(value)}
+                searchPlaceholder="e.g. Dogs"
               />
             </div>
 
             <div className="flex items-end gap-2">
               <div className="flex-1">
-                <Label
-                  htmlFor="target-page"
-                  className="flex items-center gap-1 mb-2"
-                >
+                <Label htmlFor="start-page" className="block mb-2">
                   Target Page
                 </Label>
-                <Input
-                  id="target-page"
+                <VirtualizedCombobox
+                  options={allArticles}
                   value={targetPage}
-                  onChange={(e) => setTargetPage(e.target.value)}
-                  placeholder="e.g. Canada"
+                  onValueChange={(value) => setTargetPage(value)}
+                  searchPlaceholder="e.g. Canada"
                 />
               </div>
               <Button onClick={handleStartGame} className="mb-0.5">

@@ -8,7 +8,7 @@ const REDIRECT_URI = "https://huggingfacetb-wikispeedia.hf.space";
 const SCOPE = "openid%20profile%20email%20inference-api";
 const STATE = "1234567890";
 const SSO_URL = `https://huggingface.co/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}&prompt=consent&state=${STATE}`;
-const API_BASE = "https://huggingface.co/oauth/token";
+const OAUTH_API_BASE = "https://huggingface.co/oauth/token";
 const CLIENT_SECRET = import.meta.env.VITE_HUGGINGFACE_CLIENT_SECRET; // THIS IS UNSAFE, must fix before real deploy
 
 export const SignInWithHuggingFaceButton = () => {
@@ -37,7 +37,7 @@ export const SignInWithHuggingFaceButton = () => {
         // remove the code from the url
         window.history.replaceState({}, "", window.location.pathname);
         setIsLoading(true);
-        const response = await fetch(`${API_BASE}`, {
+        const response = await fetch(`${OAUTH_API_BASE}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
