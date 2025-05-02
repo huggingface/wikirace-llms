@@ -35,8 +35,10 @@ RUN pip install -r requirements.txt
 # Copy the current directory contents into the container at $HOME/app setting the owner to the user
 COPY --chown=user . $HOME/app
 
-RUN npm install --force
-RUN npm run build
+RUN npm install -g yarn
+
+RUN yarn install
+RUN yarn build
 
 RUN curl -L https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/resolve/main/wikihop.db -o wikihop.db
 
