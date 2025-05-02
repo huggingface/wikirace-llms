@@ -38,7 +38,7 @@ COPY --chown=user . $HOME/app
 RUN npm install --force
 RUN npm run build
 
-ADD --chown=user https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/blob/main/wikihop.db wikihop.db
+RUN curl -L https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/resolve/main/wikihop.db -o wikihop.db
 
 ENV WIKISPEEDIA_DB_PATH=/home/user/app/wikihop.db
 
