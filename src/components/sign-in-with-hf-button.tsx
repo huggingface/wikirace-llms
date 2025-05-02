@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
 const CLIENT_ID = "a67ef241-fb7e-4300-a6bd-8430a7565c9a";
-const REDIRECT_URI = "https://huggingfacetb-wikispeedia.hf.space/";
+const REDIRECT_URI = "https://huggingfacetb-wikispeedia.hf.space";
 const SCOPE = "openid%20profile%20email%20inference-api";
 const STATE = "1234567890";
 const SSO_URL = `https://huggingface.co/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}&prompt=consent&state=${STATE}`;
