@@ -1,5 +1,9 @@
 FROM python:3.9
 
+# install nodejs
+ENV PYTHONUNBUFFERED 1
+RUN apt-get update && apt-get install nodejs
+
 # Set up a new user named "user" with user ID 1000
 RUN useradd -m -u 1000 user
 
@@ -12,10 +16,6 @@ ENV HOME=/home/user \
 
 # Set the working directory to the user's home directory
 WORKDIR $HOME/app
-
-# install nodejs
-ENV PYTHONUNBUFFERED 1
-RUN apt-get update && apt-get install nodejs
 
 COPY requirements.txt .
 
