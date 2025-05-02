@@ -88,7 +88,7 @@ export const SignInWithHuggingFaceButton = () => {
   const handleLogin = async () => {
     window.location.href =
       (await oauthLoginUrl({
-        scopes: window.huggingface.variables.OAUTH_SCOPES,
+        scopes: "inference-api,email",
       })) + "&prompt=consent";
   };
 
