@@ -3,7 +3,7 @@
 import * as hub from "@huggingface/hub";
 import type { RepoDesignation } from "@huggingface/hub";
 
-import mockResults from "../../qwen3-final-results.json";
+// import mockResults from "../../qwen3-final-results.json";
 
 import { useState } from "react";
 import {
@@ -48,8 +48,8 @@ export default function ViewerTab() {
 
   const fetchDataset = async () => {
     console.log("Fetching dataset...");
-    console.log(Object.keys(mockResults));
-    setRuns(mockResults.runs.slice(0, 10));
+    // console.log(Object.keys(mockResults));
+    // setRuns(mockResults.runs.slice(0, 10));
 
     return;
     setLoading(true);
