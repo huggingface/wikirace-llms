@@ -25,11 +25,6 @@ type Run = {
   hops: number;
 };
 
-const datasets = [
-  { id: "dataset1", name: "Eureka-Lab/PHYBench" },
-  { id: "dataset2", name: "Eureka-Lab/PHYBench-LLM" },
-];
-
 export default function ViewerTab() {
   const [selectedDataset, setSelectedDataset] = useState<string>("");
   const [selectedRun, setSelectedRun] = useState<number | null>(null);
@@ -84,48 +79,27 @@ export default function ViewerTab() {
   }, [runs]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-      <div className="md:col-span-3">
-        {/* <div className="mb-4">
-          <Select value={selectedDataset} onValueChange={handleDatasetChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="SELECT DATASET" />
-            </SelectTrigger>
-            <SelectContent>
-              {datasets.map((dataset) => (
-                <SelectItem key={dataset.id} value={dataset.id}>
-                  {dataset.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={fetchDataset}>Fetch Dataset</Button>
-          {loading && <p>Loading...</p>}
-        </div> */}
-
-        <div className="bg-card rounded-lg p-3 border">
-          <h3 className="text-sm font-medium mb-2 text-muted-foreground">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] overflow-hidden p-2">
+      <div className="md:col-span-3 flex flex-col max-h-full overflow-hidden">
+        <div className="bg-card rounded-lg p-3 border flex-grow overflow-hidden flex flex-col">
+          <h3 className="text-sm font-medium mb-2 text-muted-foreground flex-shrink-0">
             Available Runs
           </h3>
-          <RunsList
-            runs={runs}
-            onSelectRun={handleRunSelect}
-            selectedRunId={selectedRun}
-          />
+          <div className="flex-grow overflow-hidden">
+            <RunsList
+              runs={filterRuns}
+              onSelectRun={handleRunSelect}
+              selectedRunId={selectedRun}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="md:col-span-5">
-        <Card className="h-[800px] w-[800px] flex items-center justify-center p-0 m-0">
+      <div className="md:col-span-9 max-h-full overflow-hidden">
+        <Card className="w-full h-full flex items-center justify-center p-0 m-0 overflow-hidden">
           <ForceDirectedGraph runs={filterRuns} runId={selectedRun} />
         </Card>
       </div>
-
-      {/* <div className="md:col-span-4">
-        <Card className="w-full h-[600px] p-4">
-          <ReasoningTrace run={runs[selectedRun]} />
-        </Card>
-      </div> */}
     </div>
   );
 }

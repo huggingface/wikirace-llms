@@ -21,7 +21,7 @@ export default function RunsList({
   selectedRunId,
 }: RunsListProps) {
   return (
-    <div className="h-[600px] overflow-y-auto space-y-2 pr-1">
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden space-y-2 pr-1">
       {runs.map((run, index) => (
         <Card
           key={index}

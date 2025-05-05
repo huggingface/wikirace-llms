@@ -55,6 +55,51 @@ export default function ForceDirectedGraph({
   }>({ nodes: [], links: [] });
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  // Track container dimensions
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const parent = containerRef.current.parentElement;
+        const width = parent ? parent.clientWidth : containerRef.current.clientWidth;
+        const height = parent ? parent.clientHeight : containerRef.current.clientHeight;
+        
+        // Constrain dimensions to reasonable values
+        const constrainedWidth = Math.min(width, window.innerWidth);
+        const constrainedHeight = Math.min(height, window.innerHeight);
+        
+        setDimensions({
+          width: constrainedWidth,
+          height: constrainedHeight,
+        });
+      }
+    };
+    
+    // Initial measurement
+    updateDimensions();
+    
+    // Set up resize observer
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    resizeObserver.observe(containerRef.current);
+    
+    if (containerRef.current.parentElement) {
+      resizeObserver.observe(containerRef.current.parentElement);
+    }
+    
+    // Clean up
+    return () => {
+      if (containerRef.current) {
+        resizeObserver.unobserve(containerRef.current);
+        if (containerRef.current.parentElement) {
+          resizeObserver.unobserve(containerRef.current.parentElement);
+        }
+      }
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // Build graph data ONLY when runs change, not when runId changes
   useEffect(() => {
@@ -113,23 +158,6 @@ export default function ForceDirectedGraph({
       nodeObj.fy = centerY + radius * Math.sin(angle * index);
     });
 
-    // for (let i = 0; i < 10; i++) {
-    //   nodes.push({ id: `node${i}`, type: i === 0 || i === 9 ? "fixed" : "fluid", radius: 5, runIds: [0] });
-    // }
-
-    // for (let i = 0; i < 9; i++) {
-    //   links.push({
-    //     source: `node${i}`,
-    //     target: `node${i + 1}`,
-    //     runId: 0,
-    //   });
-    // }
-
-
-
-
-
-
     const tmpGraphData: { nodes: GraphNode[]; links: GraphLink[] } = {
       nodes: Array.from(nodesMap.values()),
       links: linksList,
@@ -138,139 +166,7 @@ export default function ForceDirectedGraph({
     setGraphData(tmpGraphData);
 
     return;
-    //  const newGraphData: { nodes: GraphNode[]; links: GraphLink[] } = {
-    //   nodes: [],
-    //   links: [],
-    // };
-    // const nodesMap = new Map<string, GraphNode>();
-    // const linksList: GraphLink[] = [];
-    // // const mainNodeSet: Set<GraphNode> = new Set();
-
-    // // First identify all main nodes (start and destination)
-    // // runs.forEach((run, runIndex) => {
-    // //   mainNodeSet.add({
-    // //     id: run.start_article,
-    // //     type: "fixed",
-    // //     radius: 7,
-    // //     runIds: [runIndex],
-    // //     isMainNode: true,
-    // //   });
-    // //   mainNodeSet.add({
-    // //     id: run.destination_article,
-    // //     type: "fixed",
-    // //     radius: 7,
-    // //     runIds: [runIndex],
-    // //     isMainNode: true,
-    // //   });
-    // // });
-
-    // // Process all runs to build data with metadata
-    // runs.forEach((run, runIndex) => {
-    //   for (let i = 0; i < run.steps.length - 1; i++) {
-    //     const step = run.steps[i];
-    //     const nextStep = run.steps[i + 1];
-
-    //     // Update or create source node
-    //     if (!nodesMap.has(step.article)) {
-    //       const isMainNode = i === 0 || i === run.steps.length - 2;
-    //       nodesMap.set(step.article, {
-    //         id: step.article,
-    //         type: isMainNode ? "fixed" : "fluid",
-    //         radius: isMainNode ? 7 : 5,
-    //         runIds: [runIndex],
-    //         isMainNode,
-    //       });
-    //     } else {
-    //       const node = nodesMap.get(step.article)!;
-    //       if (!node.runIds.includes(runIndex)) {
-    //         node.runIds.push(runIndex);
-    //       }
-    //     }
-
-    //     // Update or create target node
-    //     if (!nodesMap.has(nextStep.article)) {
-    //       const isMainNode = i === 0;
-    //       nodesMap.set(nextStep.article, {
-    //         id: nextStep.article,
-    //         type: isMainNode ? "fixed" : "fluid",
-    //         radius: isMainNode ? 7 : 5,
-    //         runIds: [runIndex],
-    //         isMainNode,
-    //       });
-    //     } else {
-    //       const node = nodesMap.get(nextStep.article)!;
-    //       if (!node.runIds.includes(runIndex)) {
-    //         node.runIds.push(runIndex);
-    //       }
-    //     }
-
-    //     // Create or update link
-    //     const linkId = `${step.article}->${nextStep.article}`;
-    //     linksList.push({
-    //       source: step.article,
-    //       target: nextStep.article,
-    //       runId: runIndex,
-    //       id: linkId,
-    //     });
-
-    //     // if (!linksMap.has(linkId)) {
-    //     //     linksMap.set(linkId, {
-    //     //         source: step.article,
-    //     //         target: nextStep.article,
-    //     //         runIds: [runIndex],
-    //     //         id: linkId
-    //     //     });
-    //     // } else {
-    //     //     const link = linksMap.get(linkId)!;
-    //     //     if (!link.runIds.includes(runIndex)) {
-    //     //         link.runIds.push(runIndex);
-    //     //     }
-    //     // }
-    //   }
-    // });
-
-    // // Position main nodes in a circle
-    // // const mainNodes = Array.from(mainNodeSet);
-    // const radius = 400; // Radius of the circle
-    // const centerX = 0; // Center X coordinate
-    // const centerY = 0; // Center Y coordinate
-
-    // const mainNodes = Array.from(nodesMap.values()).filter(
-    //   (node) => node.type === "fixed"
-    // );
-
-    // mainNodes.forEach((node, index) => {
-    //   const angle = (index * 2 * Math.PI) / mainNodes.length;
-    //   if (node) {
-    //     node.fx = centerX + radius * Math.cos(angle);
-    //     node.fy = centerY + radius * Math.sin(angle);
-    //   }
-    // });
-
-    // // Convert maps to arrays for the graph
-    // newGraphData.nodes = Array.from(nodesMap.values());
-    // newGraphData.links = linksList;
-
-    // // Convert string IDs to actual node objects in links
-    // newGraphData.links = linksList
-    //   .map((link) => {
-    //     const sourceNode = nodesMap.get(link.source as string);
-    //     const targetNode = nodesMap.get(link.target as string);
-
-    //     // Only create links when both nodes exist
-    //     if (sourceNode && targetNode) {
-    //       return {
-    //         ...link,
-    //         source: sourceNode,
-    //         target: targetNode,
-    //       };
-    //     }
-    //     // Skip this link if nodes don't exist
-    //     return null;
-    //   })
-    //   .filter(Boolean) as GraphLink[];
-
-    // setGraphData(newGraphData);
+   
   }, [runs]); // Only depends on runs, not runId
 
   // Set up the force simulation
@@ -289,7 +185,7 @@ export default function ForceDirectedGraph({
         "link",
         d3
           .forceLink(graphData.links)
-          .id((d: any) => d.id)
+          .id((d: GraphNode) => d.id)
           .distance(linkDistance)
           .strength(0.9)
       );
@@ -305,7 +201,7 @@ export default function ForceDirectedGraph({
         "collide",
         d3
           .forceCollide()
-          .radius((d: any) => (d.radius || 5) + COLLISION_PADDING)
+          .radius((d: GraphNode) => (d.radius || 5) + COLLISION_PADDING)
       );
       graphRef.current.d3Force("center", d3.forceCenter(0, 0));
 
@@ -318,6 +214,13 @@ export default function ForceDirectedGraph({
         }, 100);
     }
   }, [graphData]);
+
+  // Recenter graph when dimensions change
+  useEffect(() => {
+    if (dimensions.width > 0 && dimensions.height > 0 && graphRef.current) {
+      graphRef.current.zoomToFit(400);
+    }
+  }, [dimensions]);
 
   // Full page resize handler
   useEffect(() => {
@@ -368,15 +271,14 @@ export default function ForceDirectedGraph({
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <div ref={containerRef} className="w-full h-full">
+    <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
+      <div ref={containerRef} className="w-full h-full absolute inset-0">
         <ForceGraph2D
           ref={graphRef}
           graphData={graphData}
           nodeLabel="id"
           nodeColor={getNodeColor}
           linkColor={getLinkColor}
-          // nodeRelSize={getNodeSize}
           linkWidth={(link) => {
             return isLinkInCurrentRun(link) ? 4 : 1;
           }}
@@ -430,8 +332,12 @@ export default function ForceDirectedGraph({
               ctx.fillText(label, node.x!, node.y! + 8 + fontSize / 2);
             }
           }}
-          width={containerRef.current?.clientWidth || 800}
-          height={containerRef.current?.clientHeight || 800}
+          width={dimensions.width || containerRef.current?.clientWidth || 800}
+          height={dimensions.height || containerRef.current?.clientHeight || 800}
+          enableNodeDrag={true}
+          enableZoomInteraction={true}
+          cooldownTicks={100}
+          cooldownTime={2000}
         />
       </div>
     </div>
