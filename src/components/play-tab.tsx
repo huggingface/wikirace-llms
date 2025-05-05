@@ -10,9 +10,7 @@ import GameComponent from "@/components/game-component";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -20,14 +18,19 @@ import { API_BASE } from "@/lib/constants";
 import { VirtualizedCombobox } from "./ui/virtualized-combobox";
 
 
-export default function PlayTab() {
+export default function PlayTab({
+  startArticle,
+  destinationArticle,
+}: {
+  startArticle?: string;
+  destinationArticle?: string;
+}) {
   const [player, setPlayer] = useState<"me" | "model">("me");
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
   const [maxHops, setMaxHops] = useState<number>(20);
-  const [nodeList, setNodeList] = useState<string>("default");
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
-  const [startPage, setStartPage] = useState<string>("Dogs");
-  const [targetPage, setTargetPage] = useState<string>("Canada");
+  const [startPage, setStartPage] = useState<string>(startArticle || "Dogs");
+  const [targetPage, setTargetPage] = useState<string>(destinationArticle || "Canada");
   const [maxTokens, setMaxTokens] = useState<number>(1024);
   const [maxLinks, setMaxLinks] = useState<number>(200);
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
@@ -119,7 +122,7 @@ export default function PlayTab() {
                 options={allArticles}
                 value={startPage}
                 onValueChange={(value) => setStartPage(value)}
-                searchPlaceholder="e.g. Dogs"
+                // searchPlaceholder="e.g. Dogs"
               />
             </div>
 
@@ -132,7 +135,7 @@ export default function PlayTab() {
                   options={allArticles}
                   value={targetPage}
                   onValueChange={(value) => setTargetPage(value)}
-                  searchPlaceholder="e.g. Canada"
+                  // searchPlaceholder="e.g. Canada"
                 />
               </div>
               <Button onClick={handleStartGame} className="mb-0.5">

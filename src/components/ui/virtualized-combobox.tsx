@@ -214,9 +214,7 @@ export function VirtualizedCombobox({
             width: width,
           }}
         >
-          {selectedOption
-            ? options.find((option) => option === selectedOption)
-            : searchPlaceholder}
+          {value}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -227,9 +225,6 @@ export function VirtualizedCombobox({
           placeholder={searchPlaceholder}
           selectedOption={value}
           onSelectOption={(currentValue) => {
-            setSelectedOption(
-              currentValue === selectedOption ? "" : currentValue
-            );
             onValueChange(currentValue);
             setOpen(false);
           }}

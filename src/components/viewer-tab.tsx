@@ -17,7 +17,11 @@ type Run = {
   hops: number;
 };
 
-export default function ViewerTab() {
+export default function ViewerTab({
+  handleTryRun,
+}: {
+  handleTryRun: (startArticle: string, destinationArticle: string) => void;
+}) {
   const [selectedRun, setSelectedRun] = useState<number | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
 
@@ -32,7 +36,6 @@ export default function ViewerTab() {
   useEffect(() => {
     fetchDataset();
   }, []);
-
 
   const handleRunSelect = (runId: number) => {
     setSelectedRun(runId);
@@ -54,6 +57,7 @@ export default function ViewerTab() {
               runs={filterRuns}
               onSelectRun={handleRunSelect}
               selectedRunId={selectedRun}
+              onTryRun={handleTryRun}
             />
           </div>
         </div>

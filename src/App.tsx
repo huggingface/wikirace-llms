@@ -2,7 +2,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ViewerTab from "@/components/viewer-tab";
 import PlayTab from "@/components/play-tab";
 import { SignInWithHuggingFaceButton } from "@/components/sign-in-with-hf-button";
+import { useState } from "react";
+
 export default function Home() {
+  const [selectedTab, setSelectedTab] = useState<"view" | "play">("view");
+  const [startArticle, setStartArticle] = useState<string>("");
+  const [destinationArticle, setDestinationArticle] = useState<string>("");
+  
+  const handleTryRun = (startArticle: string, destinationArticle: string) => {
+    console.log("Trying run from", startArticle, "to", destinationArticle);
+    setSelectedTab("play");
+    setStartArticle(startArticle);
+    setDestinationArticle(destinationArticle);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-row justify-between">
@@ -10,18 +23,18 @@ export default function Home() {
         <SignInWithHuggingFaceButton />
       </div>
 
-      <Tabs defaultValue="view" className="w-full">
+      <Tabs defaultValue="view" className="w-full" onValueChange={(value) => setSelectedTab(value as "view" | "play")} value={selectedTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="view">View Runs</TabsTrigger>
           <TabsTrigger value="play">Play Game</TabsTrigger>
         </TabsList>
 
         <TabsContent value="view">
-          <ViewerTab />
+          <ViewerTab handleTryRun={handleTryRun} />
         </TabsContent>
 
         <TabsContent value="play">
-          <PlayTab />
+          <PlayTab startArticle={startArticle} destinationArticle={destinationArticle} />
         </TabsContent>
       </Tabs>
     </div>
