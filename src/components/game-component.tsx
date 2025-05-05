@@ -3,11 +3,50 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flag, Clock, Hash, ArrowRight, Bot, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Flag, Clock, Hash, ArrowRight, Bot, User, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { useInference } from "@/lib/inference";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { API_BASE } from "@/lib/constants";
 
+// Simple Switch component since it's not available in the UI components
+const Switch = ({ checked, onCheckedChange, disabled, id }: { 
+  checked: boolean; 
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+  id?: string;
+}) => {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      data-state={checked ? "checked" : "unchecked"}
+      disabled={disabled}
+      onClick={() => onCheckedChange(!checked)}
+      className={cn(
+        "focus-visible:ring-ring/50 peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
+        checked ? "bg-primary" : "bg-input"
+      )}
+    >
+      <span
+        data-state={checked ? "checked" : "unchecked"}
+        className={cn(
+          "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+          checked ? "translate-x-4" : "translate-x-0"
+        )}
+      />
+    </button>
+  );
+};
 
 type Message = {
   role: "user" | "assistant";
@@ -73,6 +112,7 @@ export default function GameComponent({
   const [gameStatus, setGameStatus] = useState<"playing" | "won" | "lost">(
     "playing"
   );
+  const [continuousPlay, setContinuousPlay] = useState<boolean>(false);
 
   const [convo, setConvo] = useState<Message[]>([]);
   const [expandedMessages, setExpandedMessages] = useState<Record<number, boolean>>({});
@@ -215,206 +255,285 @@ export default function GameComponent({
     }));
   };
 
+  // Effect for continuous play mode
+  useEffect(() => {
+    if (continuousPlay && player === "model" && gameStatus === "playing" && modelStatus !== "thinking" && !linksLoading) {
+      const timer = setTimeout(() => {
+        makeModelMove();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [continuousPlay, player, gameStatus, modelStatus, linksLoading, currentPage]);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(100vh-200px)]">
-      <Card className="p-4 flex col-span-2">
-        <h2 className="text-xl font-bold">Game Status</h2>
-        <div className="grid grid-cols-4 gap-4 mb-4">
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <ArrowRight className="h-4 w-4" /> Current
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 h-[calc(100vh-200px)] grid-rows-[auto_1fr]">
+      {/* Condensed Game Status Card */}
+      <Card className="p-2 col-span-12 h-12 row-start-1">
+        <div className="flex items-center justify-between h-full">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{currentPage}</span>
             </div>
-            <div className="font-medium">{currentPage}</div>
-          </div>
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Flag className="h-4 w-4" /> Target
+            <div className="flex items-center gap-1">
+              <Flag className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{targetPage}</span>
             </div>
-            <div className="font-medium">{targetPage}</div>
-          </div>
-
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Hash className="h-4 w-4" /> Hops
+            <div
+              className="flex items-center gap-1 cursor-help relative group"
+              title="Path history"
+            >
+              <Hash className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {hops} / {maxHops}
+              </span>
+              <div className="invisible absolute bottom-full left-0 mb-2 p-2 bg-popover border rounded-md shadow-md text-xs max-w-[300px] z-50 group-hover:visible whitespace-pre-wrap">
+                Path: {visitedNodes.join(" → ")}
+              </div>
             </div>
-            <div className="font-medium">
-              {hops} / {maxHops}
-            </div>
-          </div>
-
-          <div className="bg-muted/30 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-              <Clock className="h-4 w-4" /> Time
-            </div>
-            <div className="font-medium">{formatTime(timeElapsed)}</div>
-          </div>
-        </div>
-
-        {player === "model" && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
-            <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4 text-blue-500" />
-              <span className="font-medium text-blue-700">
-                {model} {modelStatus === "thinking" ? "is thinking..." : "is playing"}
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {formatTime(timeElapsed)}
               </span>
             </div>
           </div>
-        )}
-      </Card>
-      {/* Left pane - Current page and available links */}
-      <Card className="p-4 flex flex-col h-full overflow-hidden">
-        <h2 className="text-xl font-bold">Available Links</h2>
-        <div className="flex justify-between items-center mb-4">
-          {gameStatus !== "playing" && (
-            <Button onClick={onReset} variant="outline">
-              New Game
-            </Button>
-          )}
-        </div>
 
-        {/* Available links */}
-        {gameStatus === "playing" && (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4 overflow-y-auto max-h-[200px]">
-              {currentPageLinks
-                .sort((a, b) => a.localeCompare(b))
-                .map((link) => (
+          <div className="flex items-center gap-2">
+            {gameStatus === "playing" && (
+              <>
+                {player === "model" && (
+                  <>
+                    <Button
+                      onClick={makeModelMove}
+                      disabled={modelStatus === "thinking" || linksLoading}
+                      size="sm"
+                      className="h-8"
+                    >
+                      Make Move
+                    </Button>
+
+                    <div className="flex items-center gap-1 ml-1">
+                      <Switch
+                        id="continuous-play"
+                        checked={continuousPlay}
+                        onCheckedChange={setContinuousPlay}
+                        disabled={modelStatus === "thinking" || linksLoading}
+                      />
+                      <Label htmlFor="continuous-play" className="text-xs">
+                        Auto
+                      </Label>
+                    </div>
+                  </>
+                )}
+
+                {player === "me" && (
                   <Button
-                    key={link}
-                    variant="outline"
+                    onClick={handleGiveUp}
+                    variant="destructive"
                     size="sm"
-                    className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
-                    onClick={() => handleLinkClick(link)}
-                    disabled={player === "model" || modelStatus === "thinking"}
+                    className="h-8"
                   >
-                    {link}
+                    Give Up
                   </Button>
-                ))}
-            </div>
+                )}
+              </>
+            )}
 
-            {player === "model" && (
+            {gameStatus !== "playing" && (
               <Button
-                onClick={makeModelMove}
-                disabled={modelStatus === "thinking" || linksLoading}
+                onClick={onReset}
+                variant="outline"
+                size="sm"
+                className="h-8"
               >
-                Make Move
+                New Game
               </Button>
             )}
-          </>
-        )}
-
-        {gameStatus === "playing" && player === "me" && (
-          <Button
-            onClick={handleGiveUp}
-            variant="destructive"
-            className="mt-auto"
-          >
-            Give Up
-          </Button>
-        )}
-
-        {gameStatus === "won" && (
-          <div className="bg-green-100 text-green-800 p-4 rounded-md mt-auto">
-            <h3 className="font-bold">
-              {player === "model" ? `${model} won!` : "You won!"}
-            </h3>
-            <p>
-              {player === "model" ? "It" : "You"} reached {targetPage} in {hops}{" "}
-              hops.
-            </p>
           </div>
-        )}
-
-        {gameStatus === "lost" && (
-          <div className="bg-red-100 text-red-800 p-4 rounded-md mt-auto">
-            <h3 className="font-bold">Game Over</h3>
-            <p>
-              {player === "model" ? `${model} didn't` : "You didn't"} reach{" "}
-              {targetPage} within {maxHops} hops.
-            </p>
-          </div>
-        )}
-      </Card>
-
-      <Card className="p-4 flex flex-col h-full overflow-hidden">
-        <h2 className="text-xl font-bold mb-4">LLM Reasoning</h2>
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-          {convo.map((message, index) => {
-            const isExpanded = expandedMessages[index] || false;
-            const isLongUserMessage = message.role === "user" && message.content.length > 300;
-            const shouldTruncate = isLongUserMessage && !isExpanded;
-            
-            return (
-              <div 
-                key={index} 
-                className={`p-3 rounded-lg ${
-                  message.role === "assistant" 
-                    ? "bg-blue-50 border border-blue-100" 
-                    : "bg-gray-50 border border-gray-100"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1 text-sm font-medium text-muted-foreground">
-                  {message.role === "assistant" ? (
-                    <>
-                      <Bot className="h-4 w-4" />
-                      <span>Assistant</span>
-                    </>
-                  ) : (
-                    <>
-                      <User className="h-4 w-4" />
-                      <span>User</span>
-                    </>
-                  )}
-                </div>
-                
-                <div>
-                  <p className="whitespace-pre-wrap text-sm">
-                    {shouldTruncate 
-                      ? message.content.substring(0, 300) + "..." 
-                      : message.content
-                    }
-                  </p>
-                  
-                  {isLongUserMessage && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="mt-1 h-6 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                      onClick={() => toggleMessageExpand(index)}
-                    >
-                      {isExpanded 
-                        ? <><ChevronUp className="h-3 w-3" /> Show less</> 
-                        : <><ChevronDown className="h-3 w-3" /> Show more</>
-                      }
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {modelStatus === "thinking" && (
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-              <div className="flex items-center gap-2 mb-1 text-sm font-medium text-muted-foreground">
-                <Bot className="h-4 w-4" />
-                <span className="animate-pulse">Thinking...</span>
-              </div>
-              <p className="whitespace-pre-wrap text-sm">{partialText}</p>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
         </div>
       </Card>
 
-      {/* <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
-        <iframe
-          src={`https://simple.wikipedia.org/wiki/${currentPage.replace(
-            /\s+/g,
-            "_"
-          )}`}
-          className="w-full h-full"
-        />
-      </Card> */}
+      {/* Links panel - larger now */}
+      <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-2">
+        <h2 className="text-lg font-bold mb-2">
+          Available Links
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="ml-2 text-xs text-muted-foreground cursor-help inline-flex items-center">
+                  <Info className="h-3 w-3 mr-1" />
+                  Why are some links missing?
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[300px] p-3">
+                <p>
+                  We're playing on a pruned version of Simple Wikipedia so that
+                  every path between articles is possible. See dataset details{" "}
+                  <a
+                    href="https://huggingface.co/datasets/HuggingFaceTB/simplewiki-pruned-350k"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline hover:text-blue-800"
+                  >
+                    here
+                  </a>
+                  .
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </h2>
+
+        {gameStatus === "playing" ? (
+          <div className="grid grid-cols-3 gap-x-1 gap-y-0 overflow-y-auto h-[calc(100%-2.5rem)]">
+            {currentPageLinks
+              .sort((a, b) => a.localeCompare(b))
+              .map((link) => (
+                <Button
+                  key={link}
+                  variant="outline"
+                  size="sm"
+                  className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
+                  onClick={() => handleLinkClick(link)}
+                  disabled={player === "model" || modelStatus === "thinking"}
+                >
+                  {link}
+                </Button>
+              ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-[calc(100%-2.5rem)]">
+            {gameStatus === "won" ? (
+              <div className="bg-green-100 text-green-800 p-4 rounded-md w-full">
+                <h3 className="font-bold">
+                  {player === "model" ? `${model} won!` : "You won!"}
+                </h3>
+                <p>
+                  {player === "model" ? "It" : "You"} reached {targetPage} in{" "}
+                  {hops} hops.
+                </p>
+                <Button
+                  onClick={onReset}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  New Game
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-red-100 text-red-800 p-4 rounded-md w-full">
+                <h3 className="font-bold">Game Over</h3>
+                <p>
+                  {player === "model" ? `${model} didn't` : "You didn't"} reach{" "}
+                  {targetPage} within {maxHops} hops.
+                </p>
+                <Button
+                  onClick={onReset}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  New Game
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* Reasoning panel - larger now */}
+      {player === "model" && (
+        <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-2">
+          <h2 className="text-lg font-bold mb-2">LLM Reasoning</h2>
+          <div className="overflow-y-auto h-[calc(100%-2.5rem)] space-y-2 pr-2">
+            {convo.map((message, index) => {
+              const isExpanded = expandedMessages[index] || false;
+              const isLongUserMessage =
+                message.role === "user" && message.content.length > 300;
+              const shouldTruncate = isLongUserMessage && !isExpanded;
+
+              return (
+                <div
+                  key={index}
+                  className={`p-2 rounded-lg text-xs ${
+                    message.role === "assistant"
+                      ? "bg-blue-50 border border-blue-100"
+                      : "bg-gray-50 border border-gray-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-1 mb-1 text-xs font-medium text-muted-foreground">
+                    {message.role === "assistant" ? (
+                      <>
+                        <Bot className="h-3 w-3" />
+                        <span>Assistant</span>
+                      </>
+                    ) : (
+                      <>
+                        <User className="h-3 w-3" />
+                        <span>User</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="whitespace-pre-wrap text-xs">
+                      {shouldTruncate
+                        ? message.content.substring(0, 300) + "..."
+                        : message.content}
+                    </p>
+
+                    {isLongUserMessage && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 h-5 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => toggleMessageExpand(index)}
+                      >
+                        {isExpanded ? (
+                          <>
+                            <ChevronUp className="h-3 w-3" /> Show less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-3 w-3" /> Show more
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {modelStatus === "thinking" && (
+              <div className="p-2 rounded-lg bg-blue-50 border border-blue-100 text-xs">
+                <div className="flex items-center gap-1 mb-1 text-xs font-medium text-muted-foreground">
+                  <Bot className="h-3 w-3" />
+                  <span className="animate-pulse">Thinking...</span>
+                </div>
+                <p className="whitespace-pre-wrap text-xs">{partialText}</p>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </Card>
+      )}
+
+      {player === "me" && (
+        <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-2">
+          <h2 className="text-lg font-bold mb-2">Wikipedia View</h2>
+          <iframe
+            src={`https://simple.wikipedia.org/wiki/${currentPage.replace(
+              " ",
+              "_"
+            )}`}
+            className="w-full h-full"
+          />
+        </Card>
+      )}
     </div>
   );
 }
