@@ -113,6 +113,7 @@ export default function GameComponent({
     "playing"
   );
   const [continuousPlay, setContinuousPlay] = useState<boolean>(false);
+  const [autoRunning, setAutoRunning] = useState<boolean>(true);
 
   const [convo, setConvo] = useState<Message[]>([]);
   const [expandedMessages, setExpandedMessages] = useState<Record<number, boolean>>({});
@@ -257,14 +258,14 @@ export default function GameComponent({
 
   // Effect for continuous play mode
   useEffect(() => {
-    if (continuousPlay && player === "model" && gameStatus === "playing" && modelStatus !== "thinking" && !linksLoading) {
+    if (continuousPlay && autoRunning && player === "model" && gameStatus === "playing" && modelStatus !== "thinking" && !linksLoading) {
       const timer = setTimeout(() => {
         makeModelMove();
       }, 1000);
       
       return () => clearTimeout(timer);
     }
-  }, [continuousPlay, player, gameStatus, modelStatus, linksLoading, currentPage]);
+  }, [continuousPlay, autoRunning, player, gameStatus, modelStatus, linksLoading, currentPage]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 h-[calc(100vh-200px)] grid-rows-[auto_1fr]">
@@ -305,21 +306,34 @@ export default function GameComponent({
               <>
                 {player === "model" && (
                   <>
-                    <Button
-                      onClick={makeModelMove}
-                      disabled={modelStatus === "thinking" || linksLoading}
-                      size="sm"
-                      className="h-8"
-                    >
-                      Make Move
-                    </Button>
+                    {continuousPlay ? (
+                      <Button
+                        onClick={() => setAutoRunning(!autoRunning)}
+                        size="sm"
+                        className="h-8"
+                      >
+                        {autoRunning ? "Stop" : "Start"}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={makeModelMove}
+                        disabled={modelStatus === "thinking" || linksLoading}
+                        size="sm"
+                        className="h-8"
+                      >
+                        Next Move
+                      </Button>
+                    )}
 
                     <div className="flex items-center gap-1 ml-1">
                       <Switch
                         id="continuous-play"
                         checked={continuousPlay}
-                        onCheckedChange={setContinuousPlay}
-                        disabled={modelStatus === "thinking" || linksLoading}
+                        onCheckedChange={(checked) => {
+                          setContinuousPlay(checked);
+                          if (!checked) setAutoRunning(false);
+                        }}
+                        disabled={(modelStatus === "thinking" || linksLoading) || (continuousPlay && autoRunning)}
                       />
                       <Label htmlFor="continuous-play" className="text-xs">
                         Auto

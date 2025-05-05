@@ -17,7 +17,7 @@ export default function AboutTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            Wikispeedia (also known as the Wikipedia Game, WikiRace, or WikiClick) is a game where players race to navigate from 
+            WikiRacing (also known as the Wikipedia Game, Wikispeedia, or WikiClick) is a game where players race to navigate from 
             one Wikipedia article to another using only the hyperlinks within each article. The goal is to reach the target 
             article in the fewest clicks or in the shortest time.
           </p>

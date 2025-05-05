@@ -1,6 +1,6 @@
 ---
-title: Wikispeedia
-emoji: 🐳
+title: WikiRacing Language Models
+emoji: 🏃
 colorFrom: purple
 colorTo: gray
 sdk: docker

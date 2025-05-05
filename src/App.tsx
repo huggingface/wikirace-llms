@@ -20,7 +20,7 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-row justify-between">
-        <h1 className="text-3xl font-bold mb-6">Wikispeedia</h1>
+        <h1 className="text-3xl font-bold mb-6">WikiRacing Language Models</h1>
         <SignInWithHuggingFaceButton />
       </div>
 

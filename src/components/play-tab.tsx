@@ -10,7 +10,9 @@ import GameComponent from "@/components/game-component";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -24,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
+import popularNodes from "../../results/popular_nodes.json";
 
 export default function PlayTab({
   startArticle,
@@ -33,14 +36,16 @@ export default function PlayTab({
   destinationArticle?: string;
 }) {
   const [player, setPlayer] = useState<"me" | "model">("me");
-  const [selectedModel, setSelectedModel] = useState<string | undefined>();
+  const [selectedModel, setSelectedModel] = useState<string | undefined>(
+    "deepseek-ai/DeepSeek-V3-0324"
+  );
   const [maxHops, setMaxHops] = useState<number>(20);
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
-  const [startPage, setStartPage] = useState<string>(startArticle || "Dogs");
+  const [startPage, setStartPage] = useState<string>(startArticle || "Capybara");
   const [targetPage, setTargetPage] = useState<string>(
-    destinationArticle || "Canada"
+    destinationArticle || "Pokémon"
   );
-  const [maxTokens, setMaxTokens] = useState<number>(1024);
+  const [maxTokens, setMaxTokens] = useState<number>(3000);
   const [maxLinks, setMaxLinks] = useState<number>(200);
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
   const [modelList, setModelList] = useState<
@@ -96,7 +101,7 @@ export default function PlayTab({
 
   const fetchAvailableModels = async () => {
     const response = await fetch(
-      "https://huggingface.co/api/models?inference_provider=all&pipeline_tag=text-generation"
+      "https://huggingface.co/api/models?inference_provider=hyperbolic&pipeline_tag=text-generation"
     );
     const models = await response.json();
     const filteredModels = models.filter((m: { tags: string[] }) =>
@@ -111,14 +116,13 @@ export default function PlayTab({
         name: m.id.split("/")[1],
       })
     );
-    console.log("got model list", modelList);
     setModelList(modelList);
   };
 
   const selectRandomArticle = (setter: (article: string) => void) => {
-    if (allArticles.length > 0) {
-      const randomIndex = Math.floor(Math.random() * allArticles.length);
-      setter(allArticles[randomIndex]);
+    if (popularNodes.length > 0) {
+      const randomIndex = Math.floor(Math.random() * popularNodes.length);
+      setter(popularNodes[randomIndex]);
     }
   };
 
@@ -218,11 +222,14 @@ export default function PlayTab({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            {modelList.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                {model.id}
-                              </SelectItem>
-                            ))}
+                            <SelectGroup>
+                              <SelectLabel>Hyperbolic</SelectLabel>
+                              {modelList.map((model) => (
+                                <SelectItem key={model.id} value={model.id}>
+                                  {model.id}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
                           </SelectContent>
                         </Select>
                       </div>
@@ -273,7 +280,8 @@ export default function PlayTab({
                               <TooltipContent>
                                 <p className="max-w-xs">
                                   Maximum number of links the model can consider
-                                  per page.
+                                  per page. Small models tend to get stuck if this
+                                  is too high.
                                 </p>
                               </TooltipContent>
                             </Tooltip>
