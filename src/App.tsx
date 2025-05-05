@@ -1,11 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ViewerTab from "@/components/viewer-tab";
 import PlayTab from "@/components/play-tab";
+import AboutTab from "@/components/about-tab";
 import { SignInWithHuggingFaceButton } from "@/components/sign-in-with-hf-button";
 import { useState } from "react";
 
 export default function Home() {
-  const [selectedTab, setSelectedTab] = useState<"view" | "play">("view");
+  const [selectedTab, setSelectedTab] = useState<"view" | "play" | "about">("view");
   const [startArticle, setStartArticle] = useState<string>("");
   const [destinationArticle, setDestinationArticle] = useState<string>("");
   
@@ -27,6 +28,7 @@ export default function Home() {
         <TabsList className="mb-4">
           <TabsTrigger value="view">View Runs</TabsTrigger>
           <TabsTrigger value="play">Play Game</TabsTrigger>
+          <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
 
         <TabsContent value="view">
@@ -35,6 +37,10 @@ export default function Home() {
 
         <TabsContent value="play">
           <PlayTab startArticle={startArticle} destinationArticle={destinationArticle} />
+        </TabsContent>
+
+        <TabsContent value="about">
+          <AboutTab />
         </TabsContent>
       </Tabs>
     </div>
