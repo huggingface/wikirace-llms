@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flag, Clock, Hash, ArrowRight, Bot } from "lucide-react";
+import { Flag, Clock, Hash, ArrowRight, Bot, User, ChevronDown, ChevronUp } from "lucide-react";
 import { useInference } from "@/lib/inference";
 
 import { API_BASE } from "@/lib/constants";
@@ -74,9 +74,11 @@ export default function GameComponent({
     "playing"
   );
 
-  const [convo, setConvo] = useState([]);
+  const [convo, setConvo] = useState<Message[]>([]);
+  const [expandedMessages, setExpandedMessages] = useState<Record<number, boolean>>({});
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { status: modelStatus, partialText, inferenceResult, inference } = useInference({
+  const { status: modelStatus, partialText, inference } = useInference({
     apiKey:
       window.localStorage.getItem("huggingface_access_token") || undefined,
   });
@@ -198,8 +200,23 @@ export default function GameComponent({
     setConvo((prev) => [...prev, message]);
   };
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [convo, partialText]);
+
+  const toggleMessageExpand = (index: number) => {
+    setExpandedMessages(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(100vh-200px)]">
       <Card className="p-4 flex col-span-2">
         <h2 className="text-xl font-bold">Game Status</h2>
         <div className="grid grid-cols-4 gap-4 mb-4">
@@ -245,7 +262,7 @@ export default function GameComponent({
         )}
       </Card>
       {/* Left pane - Current page and available links */}
-      <Card className="p-4 flex flex-col">
+      <Card className="p-4 flex flex-col h-full overflow-hidden">
         <h2 className="text-xl font-bold">Available Links</h2>
         <div className="flex justify-between items-center mb-4">
           {gameStatus !== "playing" && (
@@ -286,13 +303,6 @@ export default function GameComponent({
           </>
         )}
 
-        {player === "model" && modelStatus === "thinking" && gameStatus === "playing" && (
-          <div className="flex items-center gap-2 text-sm animate-pulse mb-4">
-            <Bot className="h-4 w-4" />
-            <span>{model} is thinking...</span>
-          </div>
-        )}
-
         {gameStatus === "playing" && player === "me" && (
           <Button
             onClick={handleGiveUp}
@@ -326,24 +336,74 @@ export default function GameComponent({
         )}
       </Card>
 
-      <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
-        <h2 className="text-xl font-bold">LLM Reasoning</h2>
-        {
-          convo.map((message, index) => (
-            <div key={index}>
-              <p>{message.role}</p>
-              <p>{message.content}</p>
-              <hr />
-            </div>
-          ))
-        }
+      <Card className="p-4 flex flex-col h-full overflow-hidden">
+        <h2 className="text-xl font-bold mb-4">LLM Reasoning</h2>
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          {convo.map((message, index) => {
+            const isExpanded = expandedMessages[index] || false;
+            const isLongUserMessage = message.role === "user" && message.content.length > 300;
+            const shouldTruncate = isLongUserMessage && !isExpanded;
+            
+            return (
+              <div 
+                key={index} 
+                className={`p-3 rounded-lg ${
+                  message.role === "assistant" 
+                    ? "bg-blue-50 border border-blue-100" 
+                    : "bg-gray-50 border border-gray-100"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1 text-sm font-medium text-muted-foreground">
+                  {message.role === "assistant" ? (
+                    <>
+                      <Bot className="h-4 w-4" />
+                      <span>Assistant</span>
+                    </>
+                  ) : (
+                    <>
+                      <User className="h-4 w-4" />
+                      <span>User</span>
+                    </>
+                  )}
+                </div>
+                
+                <div>
+                  <p className="whitespace-pre-wrap text-sm">
+                    {shouldTruncate 
+                      ? message.content.substring(0, 300) + "..." 
+                      : message.content
+                    }
+                  </p>
+                  
+                  {isLongUserMessage && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-1 h-6 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                      onClick={() => toggleMessageExpand(index)}
+                    >
+                      {isExpanded 
+                        ? <><ChevronUp className="h-3 w-3" /> Show less</> 
+                        : <><ChevronDown className="h-3 w-3" /> Show more</>
+                      }
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
-        { modelStatus === "thinking" && (
-          <div className="flex items-center gap-2 text-sm animate-pulse mb-4">
-            <Bot className="h-4 w-4" />
-            <p>{partialText}</p>
-          </div>
-        )}
+          {modelStatus === "thinking" && (
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+              <div className="flex items-center gap-2 mb-1 text-sm font-medium text-muted-foreground">
+                <Bot className="h-4 w-4" />
+                <span className="animate-pulse">Thinking...</span>
+              </div>
+              <p className="whitespace-pre-wrap text-sm">{partialText}</p>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </Card>
 
       {/* <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
