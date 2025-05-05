@@ -791,6 +791,13 @@
     aria-hidden "^1.2.4"
     react-remove-scroll "^2.6.3"
 
+"@radix-ui/react-separator@^1.1.5":
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/@radix-ui/react-separator/-/react-separator-1.1.5.tgz#e124eb11c5ce5b5be45e08b8d07dbc2049733581"
+  integrity sha512-wdsy1P9VLR3L7mrznIHsMX4DEpn5tgqRDY4fjzIlz/Dw1QsumepxFtEPeK6ML5VwCcSMC8xw3won9W5Y9XDmcA==
+  dependencies:
+    "@radix-ui/react-primitive" "2.1.1"
+
 "@radix-ui/react-slot@1.2.0", "@radix-ui/react-slot@^1.2.0":
   version "1.2.0"
   resolved "https://registry.npmjs.org/@radix-ui/react-slot/-/react-slot-1.2.0.tgz"
