@@ -30,6 +30,8 @@ export default function RunsList({
   const [startFilter, setStartFilter] = useState("");
   const [endFilter, setEndFilter] = useState("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const runItemsRef = useRef<Map<number, HTMLDivElement>>(new Map());
 
   // Filter runs based on start and end filters
   const filteredRuns = runs.filter((run) => {
@@ -55,7 +57,7 @@ export default function RunsList({
         );
         
         onSelectRun(originalIndex);
-      }, 1000);
+      }, 1500);
     } else if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -67,6 +69,19 @@ export default function RunsList({
       }
     };
   }, [isPlaying, selectedRunId, filteredRuns, runs, onSelectRun]);
+
+  // Scroll selected run into view when it changes
+  useEffect(() => {
+    if (selectedRunId !== null && isPlaying) {
+      const selectedElement = runItemsRef.current.get(selectedRunId);
+      if (selectedElement && listContainerRef.current) {
+        selectedElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      }
+    }
+  }, [selectedRunId, isPlaying]);
 
   const togglePlayPause = () => {
     setIsPlaying(prev => !prev);
@@ -114,12 +129,19 @@ export default function RunsList({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 pr-1">
+      <div ref={listContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 pr-1">
         {filteredRuns.map((run) => {
           const originalIndex = runs.indexOf(run);
           return (
             <Card
               key={originalIndex}
+              ref={(el) => {
+                if (el) {
+                  runItemsRef.current.set(originalIndex, el);
+                } else {
+                  runItemsRef.current.delete(originalIndex);
+                }
+              }}
               className={cn(
                 "p-0 cursor-pointer transition-all border overflow-hidden",
                 selectedRunId === originalIndex
