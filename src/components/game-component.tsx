@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flag, Clock, Hash, BarChart, ArrowRight, Bot } from "lucide-react";
-import inference from "@/lib/inference";
-import ReasoningTrace, { Run, Step } from "./reasoning-trace";
-import ForceDirectedGraph from "./force-directed-graph";
+import { Flag, Clock, Hash, ArrowRight, Bot } from "lucide-react";
+import { useInference } from "@/lib/inference";
+
 import { API_BASE } from "@/lib/constants";
+
+
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 const buildPrompt = (
   current: string,
@@ -69,24 +74,12 @@ export default function GameComponent({
     "playing"
   );
 
-  const [reasoningTrace, setReasoningTrace] = useState<Run | null>({
-    start_article: startPage,
-    destination_article: targetPage,
-    steps: [
-      {
-        type: "start",
-        article: startPage,
-        metadata: {
-          message: "Starting Node",
-        },
-      },
-    ],
-  });
-  const [isModelThinking, setIsModelThinking] = useState<boolean>(false);
+  const [convo, setConvo] = useState([]);
 
-  const runs = useMemo(() => {
-    return reasoningTrace ? [reasoningTrace] : [];
-  }, [reasoningTrace]);
+  const { status: modelStatus, partialText, inferenceResult, inference } = useInference({
+    apiKey:
+      window.localStorage.getItem("huggingface_access_token") || undefined,
+  });
 
   const fetchCurrentPageLinks = useCallback(async () => {
     setLinksLoading(true);
@@ -121,43 +114,15 @@ export default function GameComponent({
     }
   }, [currentPage, targetPage, hops, maxHops]);
 
-  const addStepToReasoningTrace = (step: Step) => {
-    setReasoningTrace((prev) => {
-      if (!prev)
-        return {
-          steps: [step],
-          start_article: startPage,
-          destination_article: targetPage,
-        };
-      return {
-        steps: [...prev.steps, step],
-        start_article: startPage,
-        destination_article: targetPage,
-      };
-    });
-  };
-
-  const handleLinkClick = (link: string, userClicked: boolean = true) => {
+  const handleLinkClick = (link: string) => {
     if (gameStatus !== "playing") return;
 
     setCurrentPage(link);
     setHops((prev) => prev + 1);
     setVisitedNodes((prev) => [...prev, link]);
-    if (userClicked) {
-      addStepToReasoningTrace({
-        type: "step",
-        article: link,
-        links: currentPageLinks,
-        metadata: {
-          message: "User clicked link",
-        },
-      });
-    }
   };
 
   const makeModelMove = async () => {
-    setIsModelThinking(true);
-
     const prompt = buildPrompt(
       currentPage,
       targetPage,
@@ -165,16 +130,25 @@ export default function GameComponent({
       currentPageLinks
     );
 
+    pushConvo({
+      role: "user",
+      content: prompt,
+    });
+
     const modelResponse = await inference({
-      apiKey:
-        window.localStorage.getItem("huggingface_access_token") || undefined,
       model: model,
       prompt,
       maxTokens: maxTokens,
     });
-    console.log("Model response", modelResponse.content);
 
-    const answer = modelResponse.content?.match(/<answer>(.*?)<\/answer>/)?.[1];
+    pushConvo({
+      role: "assistant",
+      content: modelResponse,
+    });
+
+    console.log("Model response", modelResponse);
+
+    const answer = modelResponse.match(/<answer>(.*?)<\/answer>/)?.[1];
     if (!answer) {
       console.error("No answer found in model response");
       return;
@@ -207,27 +181,7 @@ export default function GameComponent({
       currentPageLinks
     );
 
-    addStepToReasoningTrace({
-      type: "step",
-      article: selectedLink,
-      links: currentPageLinks,
-      metadata: {
-        message: "Model picked link",
-        conversation: [
-          {
-            role: "user",
-            content: prompt,
-          },
-          {
-            role: "assistant",
-            content: modelResponse.content || "",
-          },
-        ],
-      },
-    });
-
-    handleLinkClick(selectedLink, false);
-    setIsModelThinking(false);
+    handleLinkClick(selectedLink);
   };
 
   const handleGiveUp = () => {
@@ -238,6 +192,10 @@ export default function GameComponent({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  const pushConvo = (message: Message) => {
+    setConvo((prev) => [...prev, message]);
   };
 
   return (
@@ -280,7 +238,7 @@ export default function GameComponent({
             <div className="flex items-center gap-2">
               <Bot className="h-4 w-4 text-blue-500" />
               <span className="font-medium text-blue-700">
-                {model} {isModelThinking ? "is playing..." : "is playing"}
+                {model} {modelStatus === "thinking" ? "is thinking..." : "is playing"}
               </span>
             </div>
           </div>
@@ -310,7 +268,7 @@ export default function GameComponent({
                     size="sm"
                     className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
                     onClick={() => handleLinkClick(link)}
-                    disabled={player === "model" || isModelThinking}
+                    disabled={player === "model" || modelStatus === "thinking"}
                   >
                     {link}
                   </Button>
@@ -320,7 +278,7 @@ export default function GameComponent({
             {player === "model" && (
               <Button
                 onClick={makeModelMove}
-                disabled={isModelThinking || linksLoading}
+                disabled={modelStatus === "thinking" || linksLoading}
               >
                 Make Move
               </Button>
@@ -328,7 +286,7 @@ export default function GameComponent({
           </>
         )}
 
-        {player === "model" && isModelThinking && gameStatus === "playing" && (
+        {player === "model" && modelStatus === "thinking" && gameStatus === "playing" && (
           <div className="flex items-center gap-2 text-sm animate-pulse mb-4">
             <Bot className="h-4 w-4" />
             <span>{model} is thinking...</span>
@@ -367,12 +325,28 @@ export default function GameComponent({
           </div>
         )}
       </Card>
-      {/* 
-      <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
-        <ReasoningTrace run={reasoningTrace} />
-      </Card> */}
 
       <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
+        <h2 className="text-xl font-bold">LLM Reasoning</h2>
+        {
+          convo.map((message, index) => (
+            <div key={index}>
+              <p>{message.role}</p>
+              <p>{message.content}</p>
+              <hr />
+            </div>
+          ))
+        }
+
+        { modelStatus === "thinking" && (
+          <div className="flex items-center gap-2 text-sm animate-pulse mb-4">
+            <Bot className="h-4 w-4" />
+            <p>{partialText}</p>
+          </div>
+        )}
+      </Card>
+
+      {/* <Card className="p-4 flex flex-col max-h-[500px] overflow-y-auto">
         <iframe
           src={`https://simple.wikipedia.org/wiki/${currentPage.replace(
             /\s+/g,
@@ -380,19 +354,6 @@ export default function GameComponent({
           )}`}
           className="w-full h-full"
         />
-      </Card>
-
-      {/* Right pane - Game stats and graph */}
-      {/* <Card className="p-4 flex flex-col overflow-y-auto">
-        <div className="flex-1 bg-muted/30 rounded-md p-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
-            <BarChart className="h-4 w-4" /> Path Visualization
-          </div>
-
-          <div className="h-[500px]">
-            <ForceDirectedGraph runs={runs} runId={0} />
-          </div>
-        </div>
       </Card> */}
     </div>
   );
