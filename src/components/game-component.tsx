@@ -113,7 +113,7 @@ export default function GameComponent({
     "playing"
   );
   const [continuousPlay, setContinuousPlay] = useState<boolean>(false);
-  const [autoRunning, setAutoRunning] = useState<boolean>(true);
+  const [autoRunning, setAutoRunning] = useState<boolean>(false);
 
   const [convo, setConvo] = useState<Message[]>([]);
   const [expandedMessages, setExpandedMessages] = useState<Record<number, boolean>>({});

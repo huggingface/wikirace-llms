@@ -10,9 +10,9 @@ export default function AboutTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">About Wikispeedia</CardTitle>
+          <CardTitle className="text-2xl">About WikiRacing</CardTitle>
           <CardDescription>
-            A wiki racing game where you navigate from one Wikipedia article to another using only hyperlinks
+            Navigate from one Wikipedia article to another using only hyperlinks
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

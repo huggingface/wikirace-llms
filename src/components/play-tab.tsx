@@ -48,6 +48,7 @@ export default function PlayTab({
   const [maxTokens, setMaxTokens] = useState<number>(3000);
   const [maxLinks, setMaxLinks] = useState<number>(200);
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [modelList, setModelList] = useState<
     {
       id: string;
@@ -76,6 +77,34 @@ export default function PlayTab({
     const interval = setInterval(checkServerConnection, 30000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  // Authentication check
+  useEffect(() => {
+    const checkAuthentication = () => {
+      const idToken = window.localStorage.getItem("huggingface_id_token");
+      const accessToken = window.localStorage.getItem("huggingface_access_token");
+
+      if (idToken && accessToken) {
+        try {
+          const idTokenObject = JSON.parse(idToken);
+          if (idTokenObject.exp > Date.now() / 1000) {
+            setIsAuthenticated(true);
+            return;
+          }
+        } catch (error) {
+          console.error("Error parsing ID token:", error);
+        }
+      }
+      setIsAuthenticated(false);
+    };
+
+    checkAuthentication();
+    window.addEventListener("storage", checkAuthentication);
+    
+    return () => {
+      window.removeEventListener("storage", checkAuthentication);
+    };
   }, []);
 
   useEffect(() => {
@@ -306,14 +335,30 @@ export default function PlayTab({
           </Card>
 
           <div className="flex justify-center">
-            <Button
-              onClick={handleStartGame}
-              size="lg"
-              className="px-8"
-              variant="default"
-            >
-              Start Game
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      onClick={handleStartGame}
+                      size="lg"
+                      className="px-8"
+                      variant="default"
+                      disabled={!isAuthenticated && player === "model"}
+                    >
+                      Start Game
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!isAuthenticated && player === "model" && (
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      Please sign in with Hugging Face to play the game
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {!isServerConnected && (
