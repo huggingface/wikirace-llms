@@ -44,7 +44,12 @@ RUN echo "VITE_ENV=production" >> .env
 RUN yarn install
 RUN yarn build
 
-RUN curl -L https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/resolve/main/wikihop.db -o wikihop.db
+RUN --mount=type=secret,id=HF_TOKEN,mode=0444,required=true \
+    echo "HF_TOKEN=$(cat /run/secrets/HF_TOKEN)" >> .env
+
+RUN curl https://huggingface.co/api/whoami-v2 -H "Authorization: Bearer ${HF_TOKEN}"
+
+RUN curl -L https://huggingface.co/HuggingFaceTB/simplewiki-pruned-text-350k/resolve/main/wikihop.db -H "Authorization: Bearer ${HF_TOKEN}" -o wikihop.db
 
 ENV WIKISPEEDIA_DB_PATH=/home/user/app/wikihop.db
 
