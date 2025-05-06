@@ -27,20 +27,23 @@ export default function RunsList({
   onTryRun,
 }: RunsListProps) {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [startFilter, setStartFilter] = useState("");
-  const [endFilter, setEndFilter] = useState("");
+  const [filter, setFilter] = useState("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const runItemsRef = useRef<Map<number, HTMLDivElement>>(new Map());
 
   // Filter runs based on start and end filters
   const filteredRuns = runs.filter((run) => {
-    const matchesStart = startFilter === "" || 
-      run.start_article.toLowerCase().includes(startFilter.toLowerCase());
-    const matchesEnd = endFilter === "" || 
-      run.destination_article.toLowerCase().includes(endFilter.toLowerCase());
-    return matchesStart && matchesEnd;
+    const matches = filter === "" || 
+      run.start_article.toLowerCase().includes(filter.toLowerCase()) ||
+      run.destination_article.toLowerCase().includes(filter.toLowerCase());
+    return matches;
   });
+
+  const _onSelectRun = (runId: number) => {
+    onSelectRun(runId);
+    setIsPlaying(false);
+  };
 
   // Auto-play functionality
   useEffect(() => {
@@ -92,15 +95,9 @@ export default function RunsList({
       <div className="space-y-2 mb-4">
         <div className="flex gap-2 items-center">
           <Input
-            placeholder="Filter by start"
-            value={startFilter}
-            onChange={(e) => setStartFilter(e.target.value)}
-            className="h-9"
-          />
-          <Input
-            placeholder="Filter by end"
-            value={endFilter}
-            onChange={(e) => setEndFilter(e.target.value)}
+            placeholder="Filter by article"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
             className="h-9"
           />
           <Button 
@@ -151,7 +148,7 @@ export default function RunsList({
             >
               <div 
                 className="p-3 flex flex-col gap-2"
-                onClick={() => onSelectRun(originalIndex)}
+                onClick={() => _onSelectRun(originalIndex)}
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
