@@ -526,21 +526,43 @@ export default function GameComponent({
           ) : (
             <div className="flex items-center justify-center h-[calc(100%-2.5rem)]">
               {gameStatus === "won" ? (
-                <div className="bg-green-100 text-green-800 p-4 rounded-md w-full">
-                  <h3 className="font-bold">
-                    You won!
-                  </h3>
-                  <p>
-                    You reached {targetPage} in {hops} hops.
-                  </p>
-                  <Button
-                    onClick={onReset}
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                  >
-                    New Game
-                  </Button>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 p-6 rounded-lg w-full shadow-sm">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-3 bg-green-100 p-3 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <h3 className="font-bold text-xl text-green-800 mb-2">
+                      You won!
+                    </h3>
+                    <p className="text-green-700 mb-4">
+                      You reached <span className="font-bold">{targetPage}</span> in <span className="font-bold">{hops}</span> {hops === 1 ? 'hop' : 'hops'} in {formatTime(timeElapsed)}
+                    </p>
+                    
+                    <div className="bg-white rounded-md p-4 my-3 w-full max-w-md border border-green-100">
+                      <h4 className="font-medium text-sm text-green-800 mb-2">Your Path:</h4>
+                      <div className="flex flex-wrap items-center gap-2 justify-center text-sm">
+                        {visitedNodes.map((node, index) => (
+                          <div key={`path-${index}`} className="flex items-center">
+                            <span className="bg-green-50 px-2 py-1 rounded border border-green-100 font-medium">{node}</span>
+                            {index < visitedNodes.length - 1 && (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-1 text-green-400"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        onClick={onReset}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white"
+                      >
+                        New Game
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-red-100 text-red-800 p-4 rounded-md w-full">
@@ -690,24 +712,48 @@ export default function GameComponent({
                     key={`result-${index}`}
                     className={`p-2 rounded-lg text-xs ${
                       isWon
-                        ? "bg-green-50 border border-green-100" 
+                        ? "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200" 
                         : "bg-red-50 border border-red-100"
                     }`}
                   >
-                    <div className="flex items-center gap-1 mb-1 text-xs font-medium text-muted-foreground">
-                      <Flag className="h-3 w-3" />
-                      <span>{isWon ? "Victory!" : "Game Over"}</span>
-                    </div>
-                    
-                    <div>
-                      <p>{message.content}</p>
-                      
-                      {message.metadata?.path && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Path: {message.metadata.path.join(" → ")}
-                        </p>
-                      )}
-                    </div>
+                    {isWon ? (
+                      <div className="flex flex-col items-center text-center">
+                        <div className="mb-2 bg-green-100 p-2 rounded-full">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <h3 className="font-bold text-sm text-green-800 mb-1">{message.content}</h3>
+                        
+                        {message.metadata?.path && (
+                          <div className="bg-white rounded p-2 my-2 w-full border border-green-100">
+                            <h4 className="font-medium text-xs text-green-800 mb-1">Path:</h4>
+                            <div className="flex flex-wrap items-center gap-1 justify-center text-xs">
+                              {message.metadata.path.map((node, index) => (
+                                <div key={`result-path-${index}`} className="flex items-center">
+                                  <span className="bg-green-50 px-1.5 py-0.5 rounded border border-green-100 font-medium">{node}</span>
+                                  {index < message.metadata.path.length - 1 && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-1 text-green-400"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center gap-1 mb-1 text-xs font-medium text-muted-foreground">
+                          <Flag className="h-3 w-3" />
+                          <span>Game Over</span>
+                        </div>
+                        <p>{message.content}</p>
+                        
+                        {message.metadata?.path && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Path: {message.metadata.path.join(" → ")}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               } else if (message.role === "error") {
