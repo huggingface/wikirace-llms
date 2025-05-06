@@ -29,3 +29,6 @@ tmp
 qwen3-final-results.json
 
 __pycache__
+.venv
+proctor_tmp
+wikihop.db

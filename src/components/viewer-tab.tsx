@@ -3,7 +3,7 @@
 import q3Results from "../../results/qwen3.json"
 import q3_30B_A3B_Results from "../../results/qwen3-30B-A3-results.json"
 // import mockResults from "../../qwen3-final-results.json"
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import ForceDirectedGraph from "@/components/force-directed-graph";
 import RunsList from "@/components/runs-list";
@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/select";
 import { Run as ForceGraphRun } from "@/components/reasoning-trace";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { UploadIcon } from "lucide-react";
 
-const models = {
+const defaultModels = {
   "Qwen3-14B": q3Results,
   "Qwen3-30B-A3B": q3_30B_A3B_Results,
 }
@@ -51,10 +53,12 @@ export default function ViewerTab({
   const [runs, setRuns] = useState<Run[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("Qwen3-14B");
   const [modelStats, setModelStats] = useState<ModelStats | null>(null);
+  const [models, setModels] = useState(defaultModels);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Convert the model data to the format expected by RunsList
-    const convertedRuns = models[selectedModel].runs.map((run: {
+    const convertedRuns = models[selectedModel]?.runs?.map((run: {
       start_article: string;
       destination_article: string;
       steps: { type: string; article: string }[];
@@ -64,7 +68,7 @@ export default function ViewerTab({
       destination_article: run.destination_article,
       steps: run.steps.map((step: { article: string }) => step.article),
       result: run.result
-    }));
+    })) || [];
     setRuns(convertedRuns);
 
     // Calculate model statistics
@@ -105,7 +109,7 @@ export default function ViewerTab({
       minSteps,
       maxSteps
     });
-  }, [selectedModel]);
+  }, [selectedModel, models]);
 
   const handleRunSelect = (runId: number) => {
     setSelectedRun(runId);
@@ -123,6 +127,49 @@ export default function ViewerTab({
       steps: run.steps.map(article => ({ type: "move", article }))
     }));
   }, [filterRuns]);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const jsonData = JSON.parse(e.target?.result as string);
+        
+        // Validate the JSON structure has the required fields
+        if (!jsonData.runs || !Array.isArray(jsonData.runs)) {
+          alert("Invalid JSON format. File must contain a 'runs' array.");
+          return;
+        }
+        
+        // Create a filename-based model name, removing extension and path
+        const fileName = file.name.replace(/\.[^/.]+$/, "");
+        const modelName = `Custom: ${fileName}`;
+        
+        // Add the new model to the models object
+        setModels(prev => ({
+          ...prev,
+          [modelName]: jsonData
+        }));
+        
+        // Select the newly added model
+        setSelectedModel(modelName);
+      } catch (error) {
+        alert(`Error parsing JSON file: ${error.message}`);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-200px)] max-h-[calc(100vh-200px)] overflow-hidden p-2">
@@ -142,6 +189,23 @@ export default function ViewerTab({
              </SelectContent>
            </Select>
          </div>
+         
+         <Button 
+           variant="outline" 
+           size="sm" 
+           className="flex items-center gap-1" 
+           onClick={handleUploadClick}
+         >
+           <UploadIcon size={14} />
+           <span>Upload JSON</span>
+           <input 
+             type="file" 
+             ref={fileInputRef}
+             accept=".json" 
+             className="hidden" 
+             onChange={handleFileUpload} 
+           />
+         </Button>
          
          {modelStats && (
            <div className="flex flex-wrap gap-1.5 items-center">

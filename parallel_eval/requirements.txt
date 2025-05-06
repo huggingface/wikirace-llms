@@ -1,0 +1,5 @@
+litellm>=1.10.0
+asyncio
+tqdm
+sqlite3-wrapper
+aiohttp 
