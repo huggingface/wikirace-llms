@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
 const CLIENT_ID = "a67ef241-fb7e-4300-a6bd-8430a7565c9a";
-// const REDIRECT_URI = "https://huggingfacetb-wikispeedia.hf.space";
-// const REDIRECT_URI = "http://localhost:5173/auth/callback";
-const REDIRECT_URI = isProd ? "https://huggingfacetb-wikispeedia.hf.space/auth/callback" : "http://localhost:8000/auth/callback";
+const REDIRECT_URI = isProd
+  ? "https://huggingfacetb-wikiracing-llms.hf.space/auth/callback"
+  : "http://localhost:8000/auth/callback";
 
 const SCOPE = "openid%20profile%20email%20inference-api";
 const STATE = "1234567890";

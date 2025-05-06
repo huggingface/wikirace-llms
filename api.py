@@ -116,7 +116,11 @@ async def auth_callback(request: Request):
             "client_id": CLIENT_ID,
             "code": code,
             "grant_type": "authorization_code",
-            "redirect_uri": "http://localhost:8000/auth/callback" if not IS_PROD else "https://huggingfacetb-wikispeedia.hf.space/auth/callback",
+            "redirect_uri": (
+                "http://localhost:8000/auth/callback"
+                if not IS_PROD
+                else "https://huggingfacetb-wikiracing-llms.hf.space/auth/callback"
+            ),
         },
     )
 
