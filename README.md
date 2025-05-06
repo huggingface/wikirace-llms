@@ -16,8 +16,8 @@ hf_oauth_scopes:
 Go head-to-head with Qwen, Gemma, and DeepSeek on the [Huggingface Space](https://huggingface.co/spaces/HuggingFaceTB/Wikispeedia)
 
 <!-- add gifs -->
-![vid2](assets/vid2_720p.gif)
+![vid2](https://huggingface.co/datasets/HuggingFaceTB/simplewiki-pruned-text-350k/resolve/main/vid2_720p.gif)
 
 Or run 100s of agents on any model in parallel for efficient evaluations [see README](parallel_eval)
 
-![vid1](assets/vid1_720p.gif)
+![vid1](https://huggingface.co/datasets/HuggingFaceTB/simplewiki-pruned-text-350k/resolve/main/vid1_720p.gif)
