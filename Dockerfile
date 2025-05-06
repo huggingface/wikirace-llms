@@ -53,7 +53,7 @@ RUN --mount=type=secret,id=HF_TOKEN,mode=0444,required=true \
     curl https://huggingface.co/api/whoami-v2 -H "Authorization: Bearer $(cat /run/secrets/HF_TOKEN)"
 
 RUN --mount=type=secret,id=HF_TOKEN,mode=0444,required=true \
-    curl -L https://huggingface.co/datasets/HuggingFaceTB/simplewiki-pruned-text-350k/blob/main/wikihop.db -H "Authorization: Bearer $(cat /run/secrets/HF_TOKEN)" -o wikihop.db
+    curl -L https://huggingface.co/datasets/HuggingFaceTB/simplewiki-pruned-text-350k/resolve/main/wikihop.db -H "Authorization: Bearer $(cat /run/secrets/HF_TOKEN)" -o wikihop.db
 
 ENV WIKISPEEDIA_DB_PATH=/home/user/app/wikihop.db
 
