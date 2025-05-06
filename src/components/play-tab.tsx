@@ -37,7 +37,7 @@ export default function PlayTab({
 }) {
   const [player, setPlayer] = useState<"me" | "model">("model");
   const [selectedModel, setSelectedModel] = useState<string | undefined>(
-    "deepseek-ai/DeepSeek-V3-0324"
+    "Qwen/Qwen3-30B-A3B"
   );
   const [maxHops, setMaxHops] = useState<number>(20);
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
