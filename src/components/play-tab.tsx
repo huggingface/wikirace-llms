@@ -41,7 +41,9 @@ export default function PlayTab({
   );
   const [maxHops, setMaxHops] = useState<number>(20);
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
-  const [startPage, setStartPage] = useState<string>(startArticle || "Capybara");
+  const [startPage, setStartPage] = useState<string>(
+    startArticle || "Capybara"
+  );
   const [targetPage, setTargetPage] = useState<string>(
     destinationArticle || "Pokémon"
   );
@@ -49,20 +51,17 @@ export default function PlayTab({
   const [maxLinks, setMaxLinks] = useState<number>(200);
   const [isServerConnected, setIsServerConnected] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [modelList, setModelList] = useState<
-    {
-      id: string;
-      name: string;
-      author: string;
-      likes: number;
-      trendingScore: number;
-    }[]
-  >([]);
+  const [modelList, setModelList] = useState<string[]>([
+    "deepseek-ai/DeepSeek-V3-0324",
+    "Qwen/Qwen3-235B-A22B",
+    "Qwen/Qwen3-30B-A3B",
+    "Qwen/Qwen3-14B",
+    "google/gemma-3-27b-it",
+  ]);
   const [allArticles, setAllArticles] = useState<string[]>([]);
 
   // Server connection check
   useEffect(() => {
-    fetchAvailableModels();
     const checkServerConnection = async () => {
       try {
         const response = await fetch(API_BASE + "/health");
@@ -83,7 +82,9 @@ export default function PlayTab({
   useEffect(() => {
     const checkAuthentication = () => {
       const idToken = window.localStorage.getItem("huggingface_id_token");
-      const accessToken = window.localStorage.getItem("huggingface_access_token");
+      const accessToken = window.localStorage.getItem(
+        "huggingface_access_token"
+      );
 
       if (idToken && accessToken) {
         try {
@@ -101,7 +102,7 @@ export default function PlayTab({
 
     checkAuthentication();
     window.addEventListener("storage", checkAuthentication);
-    
+
     return () => {
       window.removeEventListener("storage", checkAuthentication);
     };
@@ -126,26 +127,6 @@ export default function PlayTab({
 
   const handlePlayerChange = (value: string) => {
     setPlayer(value as "me" | "model");
-  };
-
-  const fetchAvailableModels = async () => {
-    const response = await fetch(
-      "https://huggingface.co/api/models?inference_provider=hyperbolic&pipeline_tag=text-generation"
-    );
-    const models = await response.json();
-    const filteredModels = models.filter((m: { tags: string[] }) =>
-      m.tags.includes("text-generation")
-    );
-    const modelList = filteredModels.map(
-      (m: { id: string; likes: number; trendingScore: number }) => ({
-        id: m.id,
-        likes: m.likes,
-        trendingScore: m.trendingScore,
-        author: m.id.split("/")[0],
-        name: m.id.split("/")[1],
-      })
-    );
-    setModelList(modelList);
   };
 
   const selectRandomArticle = (setter: (article: string) => void) => {
@@ -251,14 +232,11 @@ export default function PlayTab({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectGroup>
-                              <SelectLabel>Hyperbolic</SelectLabel>
-                              {modelList.map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  {model.id}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
+                            {modelList.map((model) => (
+                              <SelectItem key={model} value={model}>
+                                {model}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -309,8 +287,8 @@ export default function PlayTab({
                               <TooltipContent>
                                 <p className="max-w-xs">
                                   Maximum number of links the model can consider
-                                  per page. Small models tend to get stuck if this
-                                  is too high.
+                                  per page. Small models tend to get stuck if
+                                  this is too high.
                                 </p>
                               </TooltipContent>
                             </Tooltip>

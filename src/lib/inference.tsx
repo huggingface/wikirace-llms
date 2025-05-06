@@ -98,26 +98,19 @@ export function useInference({ apiKey }) {
     prompt,
     model,
     maxTokens,
-    provider = "fireworks-ai",
   }: {
     prompt: string;
     model: string;
     maxTokens: number;
-    provider: string;
   }) => {
     setIsLoading(true);
     setPartialText("");
 
     const client = new InferenceClient(apiKey);
 
-    // fireworks doesnt support max tokens
-    if (provider === "fireworks-ai") {
-      maxTokens = undefined;
-    }
-
     try {
       const stream = client.chatCompletionStream({
-        // provider,
+        provider: "nebius",
         model,
         maxTokens,
         messages: [
