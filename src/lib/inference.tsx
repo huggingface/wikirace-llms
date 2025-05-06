@@ -98,19 +98,26 @@ export function useInference({ apiKey }) {
     prompt,
     model,
     maxTokens,
+    provider = "fireworks-ai",
   }: {
     prompt: string;
     model: string;
     maxTokens: number;
+    provider: string;
   }) => {
     setIsLoading(true);
     setPartialText("");
 
     const client = new InferenceClient(apiKey);
 
+    // fireworks doesnt support max tokens
+    if (provider === "fireworks-ai") {
+      maxTokens = undefined;
+    }
+
     try {
       const stream = client.chatCompletionStream({
-        provider: "hyperbolic",
+        // provider,
         model,
         maxTokens,
         messages: [
@@ -132,12 +139,12 @@ export function useInference({ apiKey }) {
 
       setInferenceResult(result);
 
-      return result;
+      return {status: "success", result};
     } catch (error) {
       console.error("Error in inference", error);
       setError(error.message);
       setIsLoading(false);
-      return null;
+      return {status: "error", result: error.message};
     }
   };
 

@@ -65,7 +65,7 @@ const Switch = ({
 };
 
 type Message = {
-  role: "user" | "assistant" | "game" | "result";
+  role: "user" | "assistant" | "game" | "result" | "error";
   content: string;
   metadata?: {
     page?: string;
@@ -145,7 +145,7 @@ export default function GameComponent({
   const {
     status: modelStatus,
     partialText,
-    inference,
+    inference
   } = useInference({
     apiKey:
       window.localStorage.getItem("huggingface_access_token") || undefined,
@@ -228,11 +228,21 @@ export default function GameComponent({
       content: prompt,
     });
 
-    const modelResponse = await inference({
+    const {status, result: modelResponse} = await inference({
       model: model,
       prompt,
       maxTokens: maxTokens,
     });
+
+    if (status === "error") {
+      pushConvo({
+        role: "error",
+        content: "Error during inference: " + modelResponse,
+      });
+
+      setAutoRunning(false);
+      return;
+    }
 
     pushConvo({
       role: "assistant",
@@ -701,6 +711,12 @@ export default function GameComponent({
                         </p>
                       )}
                     </div>
+                  </div>
+                );
+              } else if (message.role === "error") {
+                return (
+                  <div className="p-2 rounded-lg bg-red-50 border border-red-100 text-xs">
+                    <p>{message.content}</p>
                   </div>
                 );
               }
