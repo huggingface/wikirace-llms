@@ -143,7 +143,7 @@ export default function ForceDirectedGraph({
 
     mainNodes.forEach((node) => {
         const oldNode = nodesMap.get(node)!;
-        nodesMap.set(node, { ...oldNode, type: "fixed", radius: 7, isMainNode: true });
+        nodesMap.set(node, { ...oldNode, id: node, type: "fixed", radius: 7, isMainNode: true });
     });
 
     // position the main nodes in a circle

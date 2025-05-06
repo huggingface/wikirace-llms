@@ -65,8 +65,14 @@ const Switch = ({
 };
 
 type Message = {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "game" | "result";
   content: string;
+  metadata?: {
+    page?: string;
+    links?: string[];
+    status?: "playing" | "won" | "lost";
+    path?: string[];
+  };
 };
 
 const buildPrompt = (
@@ -132,8 +138,8 @@ export default function GameComponent({
   const [autoRunning, setAutoRunning] = useState<boolean>(true);
   const [convo, setConvo] = useState<Message[]>([]);
   const [expandedMessages, setExpandedMessages] = useState<
-    Record<number, boolean>
-  >({});
+    Record<number | string, boolean>
+  >({ game: false });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -261,6 +267,16 @@ export default function GameComponent({
 
     const selectedLink = currentPageLinks[answerInt - 1];
 
+    // Add a game status message after each move
+    pushConvo({
+      role: "game",
+      content: `Model selected link ${answerInt}: ${selectedLink}`,
+      metadata: {
+        page: currentPage,
+        links: [...currentPageLinks],
+      },
+    });
+
     console.log(
       "Model picked selectedLink",
       selectedLink,
@@ -293,7 +309,7 @@ export default function GameComponent({
     scrollToBottom();
   }, [convo, partialText]);
 
-  const toggleMessageExpand = (index: number) => {
+  const toggleMessageExpand = (index: number | string) => {
     setExpandedMessages((prev) => ({
       ...prev,
       [index]: !prev[index],
@@ -325,6 +341,22 @@ export default function GameComponent({
     linksLoading,
     currentPage,
   ]);
+
+  // Add a result message when the game ends
+  useEffect(() => {
+    if (gameStatus !== "playing" && convo.length > 0 && convo[convo.length - 1].role !== "result") {
+      pushConvo({
+        role: "result",
+        content: gameStatus === "won" 
+          ? `${model} successfully navigated from ${visitedNodes[0]} to ${targetPage} in ${hops} moves!`
+          : `${model} failed to reach ${targetPage} within the ${maxHops} hop limit.`,
+        metadata: {
+          status: gameStatus,
+          path: [...visitedNodes],
+        },
+      });
+    }
+  }, [gameStatus]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 h-[calc(100vh-200px)] grid-rows-[auto_1fr_1fr]">
@@ -531,61 +563,149 @@ export default function GameComponent({
           <div className="overflow-y-auto h-[calc(100%-2.5rem)] space-y-2 pr-2">
             {convo.map((message, index) => {
               const isExpanded = expandedMessages[index] || false;
-              const isLongUserMessage =
-                message.role === "user" && message.content.length > 300;
-              const shouldTruncate = isLongUserMessage && !isExpanded;
+              
+              if (message.role === "user" || message.role === "assistant") {
+                const isLongUserMessage =
+                  message.role === "user" && message.content.length > 300;
+                const shouldTruncate = isLongUserMessage && !isExpanded;
+                
+                return (
+                  <div
+                    key={`message-${index}`}
+                    className={`p-2 rounded-lg text-xs ${
+                      message.role === "assistant"
+                        ? "bg-blue-50 border border-blue-100"
+                        : "bg-gray-50 border border-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 mb-1 text-xs font-medium text-muted-foreground">
+                      {message.role === "assistant" ? (
+                        <>
+                          <Bot className="h-3 w-3" />
+                          <span>Assistant</span>
+                        </>
+                      ) : (
+                        <>
+                          <User className="h-3 w-3" />
+                          <span>User</span>
+                        </>
+                      )}
+                    </div>
 
-              return (
-                <div
-                  key={index}
-                  className={`p-2 rounded-lg text-xs ${
-                    message.role === "assistant"
-                      ? "bg-blue-50 border border-blue-100"
-                      : "bg-gray-50 border border-gray-100"
-                  }`}
-                >
-                  <div className="flex items-center gap-1 mb-1 text-xs font-medium text-muted-foreground">
-                    {message.role === "assistant" ? (
-                      <>
-                        <Bot className="h-3 w-3" />
-                        <span>Assistant</span>
-                      </>
-                    ) : (
-                      <>
-                        <User className="h-3 w-3" />
-                        <span>User</span>
-                      </>
-                    )}
+                    <div>
+                      <p className="whitespace-pre-wrap text-xs">
+                        {shouldTruncate
+                          ? message.content.substring(0, 300) + "..."
+                          : message.content}
+                      </p>
+
+                      {isLongUserMessage && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 h-5 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                          onClick={() => toggleMessageExpand(index)}
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="h-3 w-3" /> Show less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-3 w-3" /> Show more
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-
-                  <div>
-                    <p className="whitespace-pre-wrap text-xs">
-                      {shouldTruncate
-                        ? message.content.substring(0, 300) + "..."
-                        : message.content}
-                    </p>
-
-                    {isLongUserMessage && (
+                );
+              } else if (message.role === "game") {
+                // Game status block
+                return (
+                  <div 
+                    key={`game-${index}`}
+                    className="p-2 rounded-lg bg-yellow-50 border border-yellow-100 text-xs"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                        <Info className="h-3 w-3" />
+                        <span>Game Status</span>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="mt-1 h-5 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                        className="h-5 text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground p-0"
                         onClick={() => toggleMessageExpand(index)}
                       >
-                        {isExpanded ? (
-                          <>
-                            <ChevronUp className="h-3 w-3" /> Show less
-                          </>
+                        {expandedMessages[index] ? (
+                          <ChevronUp className="h-3 w-3" />
                         ) : (
-                          <>
-                            <ChevronDown className="h-3 w-3" /> Show more
-                          </>
+                          <ChevronDown className="h-3 w-3" />
                         )}
                       </Button>
-                    )}
+                    </div>
+                    
+                    <div>
+                      <p className="font-medium">{message.content}</p>
+                      {message.metadata?.page && (
+                        <p className="mt-1">Current page: {message.metadata.page}</p>
+                      )}
+                      {message.metadata?.links && (
+                        <p className="mt-1">
+                          Available links: {message.metadata.links.length} 
+                          {!isExpanded && message.metadata.links.length > 0 && (
+                            <span className="text-muted-foreground">
+                              {" "}({message.metadata.links.slice(0, 3).join(", ")}
+                              {message.metadata.links.length > 3 ? "..." : ""})
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      
+                      {isExpanded && message.metadata?.links && (
+                        <div className="mt-2 space-y-1">
+                          {message.metadata.links.map((link, i) => (
+                            <div key={i} className="text-xs text-muted-foreground">
+                              {i+1}. {link}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
+                );
+              } else if (message.role === "result") {
+                // Result block
+                const isWon = message.metadata?.status === "won";
+                return (
+                  <div 
+                    key={`result-${index}`}
+                    className={`p-2 rounded-lg text-xs ${
+                      isWon
+                        ? "bg-green-50 border border-green-100" 
+                        : "bg-red-50 border border-red-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 mb-1 text-xs font-medium text-muted-foreground">
+                      <Flag className="h-3 w-3" />
+                      <span>{isWon ? "Victory!" : "Game Over"}</span>
+                    </div>
+                    
+                    <div>
+                      <p>{message.content}</p>
+                      
+                      {message.metadata?.path && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Path: {message.metadata.path.join(" → ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              
+              return null;
             })}
 
             {modelStatus === "thinking" && (
@@ -597,6 +717,7 @@ export default function GameComponent({
                 <p className="whitespace-pre-wrap text-xs">{partialText}</p>
               </div>
             )}
+            
             <div ref={messagesEndRef} />
           </div>
         </Card>
