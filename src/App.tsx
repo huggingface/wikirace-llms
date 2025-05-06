@@ -3,6 +3,7 @@ import ViewerTab from "@/components/viewer-tab";
 import PlayTab from "@/components/play-tab";
 import AboutTab from "@/components/about-tab";
 import { SignInWithHuggingFaceButton } from "@/components/sign-in-with-hf-button";
+import { Github } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
@@ -41,9 +42,19 @@ export default function Home() {
           <p>This application doesn't work well on small screens. Please use a desktop for the best experience.</p>
         </div>
       )}
-      <div className="flex flex-row justify-between">
+      <div className="flex flex-row justify-between items-center">
         <h1 className="text-3xl font-bold mb-6">WikiRacing Language Models</h1>
-        <SignInWithHuggingFaceButton />
+        <div className="flex items-center gap-4">
+          <a 
+            href="https://github.com/Stillerman/wikirace-llms" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-gray-700 hover:text-gray-900"
+          >
+            <Github size={24} />
+          </a>
+          <SignInWithHuggingFaceButton />
+        </div>
       </div>
 
       <Tabs defaultValue="view" className="w-full" onValueChange={(value) => setSelectedTab(value as "view" | "play")} value={selectedTab}>
