@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flag, Clock, Hash, ArrowRight, Bot, User, ChevronDown, ChevronUp, Info } from "lucide-react";
+import {
+  Flag,
+  Clock,
+  Hash,
+  ArrowRight,
+  Bot,
+  User,
+  ChevronDown,
+  ChevronUp,
+  Info,
+} from "lucide-react";
 import { useInference } from "@/lib/inference";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -15,10 +25,16 @@ import {
 } from "@/components/ui/tooltip";
 
 import { API_BASE } from "@/lib/constants";
-
+import ForceDirectedGraph from "./force-directed-graph";
+import qwen3Data from "../../results/qwen3.json"
 // Simple Switch component since it's not available in the UI components
-const Switch = ({ checked, onCheckedChange, disabled, id }: { 
-  checked: boolean; 
+const Switch = ({
+  checked,
+  onCheckedChange,
+  disabled,
+  id,
+}: {
+  checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
   id?: string;
@@ -112,14 +128,19 @@ export default function GameComponent({
   const [gameStatus, setGameStatus] = useState<"playing" | "won" | "lost">(
     "playing"
   );
-  const [continuousPlay, setContinuousPlay] = useState<boolean>(false);
-  const [autoRunning, setAutoRunning] = useState<boolean>(false);
-
+  const [continuousPlay, setContinuousPlay] = useState<boolean>(true);
+  const [autoRunning, setAutoRunning] = useState<boolean>(true);
   const [convo, setConvo] = useState<Message[]>([]);
-  const [expandedMessages, setExpandedMessages] = useState<Record<number, boolean>>({});
+  const [expandedMessages, setExpandedMessages] = useState<
+    Record<number, boolean>
+  >({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { status: modelStatus, partialText, inference } = useInference({
+  const {
+    status: modelStatus,
+    partialText,
+    inference,
+  } = useInference({
     apiKey:
       window.localStorage.getItem("huggingface_access_token") || undefined,
   });
@@ -164,6 +185,29 @@ export default function GameComponent({
     setHops((prev) => prev + 1);
     setVisitedNodes((prev) => [...prev, link]);
   };
+
+  const currentRuns = useMemo(() => {
+    const q3runs = qwen3Data.runs.filter((run) => run.result === "win");
+
+    if (visitedNodes.length === 0) {
+      return q3runs;
+    }
+
+    return [
+      {
+        steps: [
+          {
+            type: "start",
+            article: startPage,
+          },
+          ...visitedNodes.map((node) => ({ type: "move", article: node })),
+        ],
+        start_article: startPage,
+        destination_article: targetPage,
+      },
+      ...q3runs,
+    ];
+  }, [visitedNodes, startPage, targetPage]);
 
   const makeModelMove = async () => {
     const prompt = buildPrompt(
@@ -250,25 +294,40 @@ export default function GameComponent({
   }, [convo, partialText]);
 
   const toggleMessageExpand = (index: number) => {
-    setExpandedMessages(prev => ({
+    setExpandedMessages((prev) => ({
       ...prev,
-      [index]: !prev[index]
+      [index]: !prev[index],
     }));
   };
 
   // Effect for continuous play mode
   useEffect(() => {
-    if (continuousPlay && autoRunning && player === "model" && gameStatus === "playing" && modelStatus !== "thinking" && !linksLoading) {
+    if (
+      continuousPlay &&
+      autoRunning &&
+      player === "model" &&
+      gameStatus === "playing" &&
+      modelStatus !== "thinking" &&
+      !linksLoading
+    ) {
       const timer = setTimeout(() => {
         makeModelMove();
       }, 1000);
-      
+
       return () => clearTimeout(timer);
     }
-  }, [continuousPlay, autoRunning, player, gameStatus, modelStatus, linksLoading, currentPage]);
+  }, [
+    continuousPlay,
+    autoRunning,
+    player,
+    gameStatus,
+    modelStatus,
+    linksLoading,
+    currentPage,
+  ]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 h-[calc(100vh-200px)] grid-rows-[auto_1fr]">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 h-[calc(100vh-200px)] grid-rows-[auto_1fr_1fr]">
       {/* Condensed Game Status Card */}
       <Card className="p-2 col-span-12 h-12 row-start-1">
         <div className="flex items-center justify-between h-full">
@@ -333,7 +392,11 @@ export default function GameComponent({
                           setContinuousPlay(checked);
                           if (!checked) setAutoRunning(false);
                         }}
-                        disabled={(modelStatus === "thinking" || linksLoading) || (continuousPlay && autoRunning)}
+                        disabled={
+                          modelStatus === "thinking" ||
+                          linksLoading ||
+                          (continuousPlay && autoRunning)
+                        }
                       />
                       <Label htmlFor="continuous-play" className="text-xs">
                         Auto
@@ -370,97 +433,100 @@ export default function GameComponent({
       </Card>
 
       {/* Links panel - larger now */}
-      <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-2">
-        <h2 className="text-lg font-bold mb-2">
-          Available Links
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="ml-2 text-xs text-muted-foreground cursor-help inline-flex items-center">
-                  <Info className="h-3 w-3 mr-1" />
-                  Why are some links missing?
-                </span>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-[300px] p-3">
-                <p>
-                  We're playing on a pruned version of Simple Wikipedia so that
-                  every path between articles is possible. See dataset details{" "}
-                  <a
-                    href="https://huggingface.co/datasets/HuggingFaceTB/simplewiki-pruned-350k"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline hover:text-blue-800"
+      {player === "me" && (
+        <Card className="p-3 md:col-span-6 h-full overflow-hidden row-span-2 row-start-2">
+          <h2 className="text-lg font-bold mb-2">
+            Available Links
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="ml-2 text-xs text-muted-foreground cursor-help inline-flex items-center">
+                    <Info className="h-3 w-3 mr-1" />
+                    Why are some links missing?
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px] p-3">
+                  <p>
+                    We're playing on a pruned version of Simple Wikipedia so
+                    that every path between articles is possible. See dataset
+                    details{" "}
+                    <a
+                      href="https://huggingface.co/datasets/HuggingFaceTB/simplewiki-pruned-350k"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline hover:text-blue-800"
+                    >
+                      here
+                    </a>
+                    .
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </h2>
+
+          {gameStatus === "playing" ? (
+            <div className="grid grid-cols-3 gap-x-1 gap-y-0 overflow-y-auto h-[calc(100%-2.5rem)]">
+              {currentPageLinks
+                .sort((a, b) => a.localeCompare(b))
+                .map((link) => (
+                  <Button
+                    key={link}
+                    variant="outline"
+                    size="sm"
+                    className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
+                    onClick={() => handleLinkClick(link)}
+                    disabled={player === "model" || modelStatus === "thinking"}
                   >
-                    here
-                  </a>
-                  .
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </h2>
+                    {link}
+                  </Button>
+                ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[calc(100%-2.5rem)]">
+              {gameStatus === "won" ? (
+                <div className="bg-green-100 text-green-800 p-4 rounded-md w-full">
+                  <h3 className="font-bold">
+                    {player === "model" ? `${model} won!` : "You won!"}
+                  </h3>
+                  <p>
+                    {player === "model" ? "It" : "You"} reached {targetPage} in{" "}
+                    {hops} hops.
+                  </p>
+                  <Button
+                    onClick={onReset}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    New Game
+                  </Button>
+                </div>
+              ) : (
+                <div className="bg-red-100 text-red-800 p-4 rounded-md w-full">
+                  <h3 className="font-bold">Game Over</h3>
+                  <p>
+                    {player === "model" ? `${model} didn't` : "You didn't"}{" "}
+                    reach {targetPage} within {maxHops} hops.
+                  </p>
+                  <Button
+                    onClick={onReset}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    New Game
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
-        {gameStatus === "playing" ? (
-          <div className="grid grid-cols-3 gap-x-1 gap-y-0 overflow-y-auto h-[calc(100%-2.5rem)]">
-            {currentPageLinks
-              .sort((a, b) => a.localeCompare(b))
-              .map((link) => (
-                <Button
-                  key={link}
-                  variant="outline"
-                  size="sm"
-                  className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
-                  onClick={() => handleLinkClick(link)}
-                  disabled={player === "model" || modelStatus === "thinking"}
-                >
-                  {link}
-                </Button>
-              ))}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-[calc(100%-2.5rem)]">
-            {gameStatus === "won" ? (
-              <div className="bg-green-100 text-green-800 p-4 rounded-md w-full">
-                <h3 className="font-bold">
-                  {player === "model" ? `${model} won!` : "You won!"}
-                </h3>
-                <p>
-                  {player === "model" ? "It" : "You"} reached {targetPage} in{" "}
-                  {hops} hops.
-                </p>
-                <Button
-                  onClick={onReset}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                >
-                  New Game
-                </Button>
-              </div>
-            ) : (
-              <div className="bg-red-100 text-red-800 p-4 rounded-md w-full">
-                <h3 className="font-bold">Game Over</h3>
-                <p>
-                  {player === "model" ? `${model} didn't` : "You didn't"} reach{" "}
-                  {targetPage} within {maxHops} hops.
-                </p>
-                <Button
-                  onClick={onReset}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                >
-                  New Game
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
-
-      {/* Reasoning panel - larger now */}
+      {/* Reasoning panel - spans full height on left side */}
       {player === "model" && (
-        <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-2">
+        <Card className="p-3 md:col-span-6 h-full overflow-hidden row-span-2 row-start-2">
           <h2 className="text-lg font-bold mb-2">LLM Reasoning</h2>
           <div className="overflow-y-auto h-[calc(100%-2.5rem)] space-y-2 pr-2">
             {convo.map((message, index) => {
@@ -536,18 +602,33 @@ export default function GameComponent({
         </Card>
       )}
 
-      {player === "me" && (
-        <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-2">
-          <h2 className="text-lg font-bold mb-2">Wikipedia View</h2>
+      {/* Wikipedia view - top right quadrant */}
+      <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-2">
+        <h2 className="text-lg font-bold mb-2">Wikipedia View</h2>
+        <div className="relative w-full h-[calc(100%-2.5rem)] overflow-hidden">
           <iframe
+            style={{
+              transform: "scale(0.5, 0.5)",
+              width: "calc(100% * 2)",
+              height: "calc(100% * 2)",
+              transformOrigin: "top left",
+              position: "absolute",
+              top: 0,
+              left: 0,
+            }}
             src={`https://simple.wikipedia.org/wiki/${currentPage.replace(
               " ",
               "_"
             )}`}
-            className="w-full h-full"
+            className="border-0"
           />
-        </Card>
-      )}
+        </div>
+      </Card>
+
+      {/* Force directed graph - bottom right quadrant */}
+      <Card className="p-3 md:col-span-6 h-full overflow-hidden row-start-3">
+        <ForceDirectedGraph runs={currentRuns} runId={0} />
+      </Card>
     </div>
   );
 }

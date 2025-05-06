@@ -292,7 +292,7 @@ export default function ForceDirectedGraph({
               (n) => n + fontSize * 0.2
             );
 
-            const isInCurrentRun = node.runIds.includes(runId);
+            const isInCurrentRun = node.runIds?.includes(runId);
 
             // Apply opacity based on node type and properties
             const opacity = isInCurrentRun ? 1.0 : STYLES.minNodeOpacity;

@@ -35,7 +35,7 @@ export default function PlayTab({
   startArticle?: string;
   destinationArticle?: string;
 }) {
-  const [player, setPlayer] = useState<"me" | "model">("me");
+  const [player, setPlayer] = useState<"me" | "model">("model");
   const [selectedModel, setSelectedModel] = useState<string | undefined>(
     "deepseek-ai/DeepSeek-V3-0324"
   );
