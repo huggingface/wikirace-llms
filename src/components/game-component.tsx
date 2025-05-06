@@ -508,7 +508,7 @@ export default function GameComponent({
           </h2>
 
           {gameStatus === "playing" ? (
-            <div className="grid grid-cols-3 gap-x-1 gap-y-0 overflow-y-auto h-[calc(100%-2.5rem)]">
+            <div className="flex flex-wrap content-start overflow-y-auto h-[calc(100%-2.5rem)]">
               {currentPageLinks
                 .sort((a, b) => a.localeCompare(b))
                 .map((link) => (
@@ -516,9 +516,8 @@ export default function GameComponent({
                     key={link}
                     variant="outline"
                     size="sm"
-                    className="justify-start overflow-hidden text-ellipsis whitespace-nowrap"
+                    className="justify-start overflow-hidden text-ellipsis whitespace-nowrap w-[calc(33.333%-0.5rem)] m-[0.25rem]"
                     onClick={() => handleLinkClick(link)}
-                    disabled={player === "model" || modelStatus === "thinking"}
                   >
                     {link}
                   </Button>
@@ -529,11 +528,10 @@ export default function GameComponent({
               {gameStatus === "won" ? (
                 <div className="bg-green-100 text-green-800 p-4 rounded-md w-full">
                   <h3 className="font-bold">
-                    {player === "model" ? `${model} won!` : "You won!"}
+                    You won!
                   </h3>
                   <p>
-                    {player === "model" ? "It" : "You"} reached {targetPage} in{" "}
-                    {hops} hops.
+                    You reached {targetPage} in {hops} hops.
                   </p>
                   <Button
                     onClick={onReset}
@@ -548,8 +546,7 @@ export default function GameComponent({
                 <div className="bg-red-100 text-red-800 p-4 rounded-md w-full">
                   <h3 className="font-bold">Game Over</h3>
                   <p>
-                    {player === "model" ? `${model} didn't` : "You didn't"}{" "}
-                    reach {targetPage} within {maxHops} hops.
+                    You didn't reach {targetPage} within {maxHops} hops.
                   </p>
                   <Button
                     onClick={onReset}
