@@ -46,7 +46,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold mb-6">WikiRacing Language Models</h1>
         <div className="flex items-center gap-4">
           <a 
-            href="https://github.com/Stillerman/wikirace-llms" 
+            href="https://github.com/huggingface/wikirace-llms" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-gray-700 hover:text-gray-900"
