@@ -1,4 +1,4 @@
-litellm>=1.10.0
+litellm>=1.10.0,!=1.107.0
 asyncio
 tqdm
 sqlite3-wrapper
